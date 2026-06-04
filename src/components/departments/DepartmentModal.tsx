@@ -56,17 +56,7 @@ export function DepartmentModal({ department, onClose }: DepartmentModalProps) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
-  const slideVariants = isMobile
-    ? {
-        hidden: { y: "100%", opacity: 0 },
-        visible: { y: 0, opacity: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
-        exit: { y: "100%", opacity: 0, transition: { duration: 0.3, ease: "easeIn" } },
-      }
-    : {
-        hidden: { x: "100%", opacity: 0 },
-        visible: { x: 0, opacity: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
-        exit: { x: "100%", opacity: 0, transition: { duration: 0.3, ease: "easeIn" } },
-      };
+  const ease = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
   return (
     <AnimatePresence>
@@ -86,10 +76,10 @@ export function DepartmentModal({ department, onClose }: DepartmentModalProps) {
           {/* Panel */}
           <motion.div
             key="modal-panel"
-            variants={slideVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial={isMobile ? { y: "100%", opacity: 0 } : { x: "100%", opacity: 0 }}
+            animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+            exit={isMobile ? { y: "100%", opacity: 0 } : { x: "100%", opacity: 0 }}
+            transition={{ duration: 0.4, ease }}
             className={cn(
               "fixed z-50 bg-white overflow-y-auto",
               // Desktop: right panel
