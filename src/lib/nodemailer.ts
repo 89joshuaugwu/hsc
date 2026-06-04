@@ -38,6 +38,10 @@ export async function sendEmail({
   html: string;
   from?: string;
 }) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("SMTP not configured — email skipped");
+    return null;
+  }
   return transporter.sendMail({
     from: from || defaultFrom,
     to: Array.isArray(to) ? to.join(", ") : to,
