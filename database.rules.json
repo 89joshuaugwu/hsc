@@ -1,0 +1,40 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "live_status": {
+      ".read": true,
+      ".write": "auth != null && auth.token.admin === true"
+    },
+
+    "chapel_info": {
+      ".read": true,
+      ".write": "auth != null && auth.token.admin === true"
+    },
+
+    "announcements": {
+      ".read": true,
+      ".write": "auth != null && auth.token.admin === true"
+    },
+
+    "service_times": {
+      ".read": true,
+      ".write": "auth != null && auth.token.admin === true"
+    },
+
+    "notifications": {
+      "$userId": {
+        ".read": "auth != null && auth.uid === $userId",
+        ".write": "auth != null && auth.token.admin === true"
+      }
+    },
+
+    "presence": {
+      "$userId": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $userId"
+      }
+    }
+  }
+}
