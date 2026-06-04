@@ -47,9 +47,9 @@ export const cardHover = {
   hover: {
     scale: 1.02, y: -4,
     boxShadow: "0 16px 48px rgba(14,97,136,0.20)",
-    transition: { duration: 0.3, ease: "easeOut" },
+    transition: { duration: 0.3, ease: "easeOut" as const },
   },
-};
+} as const;
 
 export const heroReveal: Variants = {
   hidden: { opacity: 0, y: 60, skewY: 2 },
