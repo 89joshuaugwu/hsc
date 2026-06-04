@@ -7,6 +7,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  setDoc,
   deleteDoc,
   query,
   where,
@@ -73,12 +74,12 @@ export default function AdminLivePage() {
     setProcessing(true);
 
     try {
-      await updateDoc(doc(db, "live_status", "current"), {
+      await setDoc(doc(db, "live_status", "current"), {
         isLive: true,
         activityName: actName.trim(),
         startedAt: Timestamp.now(),
         startedBy: "admin",
-      });
+      }, { merge: true });
     } catch (error) {
       console.error("Go live error:", error);
     } finally {
@@ -90,11 +91,11 @@ export default function AdminLivePage() {
   const handleEndLive = async () => {
     setProcessing(true);
     try {
-      await updateDoc(doc(db, "live_status", "current"), {
+      await setDoc(doc(db, "live_status", "current"), {
         isLive: false,
         activityName: "",
         startedAt: null,
-      });
+      }, { merge: true });
     } catch (error) {
       console.error("End live error:", error);
     } finally {

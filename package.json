@@ -12,6 +12,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@paystack/inline-js": "^2.22.9",
     "@types/nodemailer": "^8.0.0",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "firebase": "^12.14.0",

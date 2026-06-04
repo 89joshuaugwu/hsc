@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { CldUploadWidget } from "next-cloudinary";
+import { ImageUpload } from "@/components/admin/upload/ImageUpload";
 
 /* ─── Types ─── */
 interface SettingsForm {
@@ -34,6 +34,7 @@ interface SettingsForm {
   };
   serviceTimes: { label: string; day: string; time: string }[];
   heroImageUrl: string;
+  heroImagePublicId: string;
   missionStatement: string;
   visionStatement: string;
   scriptureVerse: string;
@@ -65,6 +66,7 @@ export default function AdminSettingsPage() {
       socials: { facebook: "", instagram: "", twitter: "", whatsapp: "" },
       serviceTimes: [{ label: "", day: "", time: "" }],
       heroImageUrl: "",
+      heroImagePublicId: "",
       missionStatement: "",
       visionStatement: "",
       scriptureVerse: "",
@@ -106,6 +108,7 @@ export default function AdminSettingsPage() {
             socials: d.socials || { facebook: "", instagram: "", twitter: "", whatsapp: "" },
             serviceTimes: d.serviceTimes || [{ label: "", day: "", time: "" }],
             heroImageUrl: d.heroImageUrl || "",
+            heroImagePublicId: d.heroImagePublicId || "",
             missionStatement: d.missionStatement || "",
             visionStatement: d.visionStatement || "",
             scriptureVerse: d.scriptureVerse || "",
@@ -151,6 +154,7 @@ export default function AdminSettingsPage() {
           socials: data.socials,
           serviceTimes: data.serviceTimes,
           heroImageUrl: data.heroImageUrl,
+          heroImagePublicId: data.heroImagePublicId || null,
           missionStatement: data.missionStatement,
           visionStatement: data.visionStatement,
           scriptureVerse: data.scriptureVerse,
@@ -168,12 +172,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleUploadSuccess = (result: { info?: { secure_url?: string } }) => {
-    if (result?.info?.secure_url) {
-      chapelForm.setValue("heroImageUrl", result.info.secure_url, { shouldDirty: true });
-      toast.success("Hero image uploaded!");
-    }
-  };
+
 
   /* ── Save Email Config ── */
   const saveEmailConfig = async (data: EmailConfigForm) => {
@@ -357,15 +356,19 @@ export default function AdminSettingsPage() {
 
           {/* Hero Image URL */}
           <div>
-            <label className="block font-body text-xs font-semibold text-text-muted mb-1">Hero Image URL</label>
-            <div className="flex gap-2">
-              <input {...chapelForm.register("heroImageUrl")} placeholder="Cloudinary URL" className="flex-1 px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-              <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string } })}>
-                {({ open }) => (
-                  <button type="button" onClick={() => open()} className="px-4 py-2 bg-chapel-400/10 text-chapel-400 font-body text-sm font-semibold rounded-lg hover:bg-chapel-400/20 whitespace-nowrap">Upload</button>
-                )}
-              </CldUploadWidget>
-            </div>
+            <ImageUpload
+              label="Hero Image"
+              hint="Recommended: 1920×1080px, JPG or WEBP"
+              value={chapelForm.watch("heroImageUrl")}
+              onChange={(url, publicId) => {
+                chapelForm.setValue("heroImageUrl", url, { shouldDirty: true });
+                chapelForm.setValue("heroImagePublicId", publicId, { shouldDirty: true });
+              }}
+              onRemove={() => {
+                chapelForm.setValue("heroImageUrl", "", { shouldDirty: true });
+                chapelForm.setValue("heroImagePublicId", "", { shouldDirty: true });
+              }}
+            />
           </div>
 
           {/* Mission / Vision */}

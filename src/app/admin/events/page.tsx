@@ -7,10 +7,10 @@ import { useForm } from "react-hook-form";
 import { Plus, Edit2, Trash2, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { CldUploadWidget } from "next-cloudinary";
+import { ImageUpload } from "@/components/admin/upload/ImageUpload";
 
-interface EventItem { id: string; title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; createdAt: { toDate: () => Date }; }
-type FormData = { title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; };
+interface EventItem { id: string; title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; coverImagePublicId?: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; createdAt: { toDate: () => Date }; }
+type FormData = { title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; coverImagePublicId: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; };
 
 export default function AdminEventsPage() {
   const [items, setItems] = useState<EventItem[]>([]);
@@ -38,17 +38,17 @@ export default function AdminEventsPage() {
   const onSave = async (data: FormData) => {
     setSaving(true);
     try {
-      const payload = { ...data, startDate: data.startDate ? Timestamp.fromDate(new Date(data.startDate)) : null, endDate: data.endDate ? Timestamp.fromDate(new Date(data.endDate)) : null };
+      const payload = { ...data, coverImagePublicId: data.coverImagePublicId || null, startDate: data.startDate ? Timestamp.fromDate(new Date(data.startDate)) : null, endDate: data.endDate ? Timestamp.fromDate(new Date(data.endDate)) : null };
       if (editId) { await updateDoc(doc(db, "events", editId), { ...payload, updatedAt: Timestamp.now() }); toast.success("Updated!"); }
       else { await addDoc(collection(db, "events"), { ...payload, createdAt: Timestamp.now() }); toast.success("Created!"); }
-      setShowForm(false); setEditId(null); reset({ isActive: true, isFeatured: false, requiresRegistration: false }); fetchAll();
+      setShowForm(false); setEditId(null); reset({ isActive: true, isFeatured: false, requiresRegistration: false, coverImageUrl: "", coverImagePublicId: "" }); fetchAll();
     } catch { toast.error("Save failed."); } finally { setSaving(false); }
   };
 
   const handleEdit = (item: EventItem) => {
     setEditId(item.id);
     setValue("title", item.title); setValue("description", item.description); setValue("category", item.category);
-    setValue("location", item.location); setValue("coverImageUrl", item.coverImageUrl || "");
+    setValue("location", item.location); setValue("coverImageUrl", item.coverImageUrl || ""); setValue("coverImagePublicId", item.coverImagePublicId || "");
     setValue("isFeatured", item.isFeatured); setValue("requiresRegistration", item.requiresRegistration);
     setValue("registrationUrl", item.registrationUrl || ""); setValue("isActive", item.isActive);
     // Convert Timestamp to datetime-local string
@@ -57,16 +57,16 @@ export default function AdminEventsPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, publicId?: string) => {
     if (!confirm("Delete this event?")) return;
-    try { await deleteDoc(doc(db, "events", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Delete failed."); }
-  };
-
-  const handleUploadSuccess = (result: { info?: { secure_url?: string } }) => {
-    if (result?.info?.secure_url) {
-      setValue("coverImageUrl", result.info.secure_url);
-      toast.success("Image uploaded!");
-    }
+    try { 
+      if (publicId) {
+        await fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId }) });
+      }
+      await deleteDoc(doc(db, "events", id)); 
+      setItems((p) => p.filter((i) => i.id !== id)); 
+      toast.success("Deleted."); 
+    } catch { toast.error("Delete failed."); }
   };
 
   return (
@@ -93,14 +93,19 @@ export default function AdminEventsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input {...register("location")} placeholder="Location" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-            <div className="flex gap-2">
-              <input {...register("coverImageUrl")} placeholder="Cover image URL" className="flex-1 px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-              <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string } })}>
-                {({ open }) => (
-                  <button type="button" onClick={() => open()} className="px-4 py-2 bg-chapel-400/10 text-chapel-400 font-body text-sm font-semibold rounded-lg hover:bg-chapel-400/20 whitespace-nowrap">Upload</button>
-                )}
-              </CldUploadWidget>
-            </div>
+            <ImageUpload
+              label="Cover Image"
+              hint="Recommended: 1200×600px, JPG or PNG"
+              value={watch("coverImageUrl")}
+              onChange={(url, publicId) => {
+                setValue("coverImageUrl", url);
+                setValue("coverImagePublicId", publicId);
+              }}
+              onRemove={() => {
+                setValue("coverImageUrl", "");
+                setValue("coverImagePublicId", "");
+              }}
+            />
           </div>
           <div className="flex flex-wrap gap-4">
             <label className="flex items-center gap-2 font-body text-sm"><input type="checkbox" {...register("isFeatured")} />Featured</label>
@@ -125,7 +130,7 @@ export default function AdminEventsPage() {
                   <td className="px-4 py-3"><span className="px-2 py-0.5 bg-chapel-400/10 text-chapel-400 font-body text-[0.65rem] font-bold rounded-full">{item.category}</span></td>
                   <td className="px-4 py-3 font-body text-xs text-text-muted">{item.location || "-"}</td>
                   <td className="px-4 py-3"><span className={cn("px-2 py-0.5 font-body text-[0.65rem] font-bold rounded-full", item.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>{item.isActive ? "Yes" : "No"}</span></td>
-                  <td className="px-4 py-3 flex gap-1"><button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={14} /></button><button onClick={() => handleDelete(item.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
+                  <td className="px-4 py-3 flex gap-1"><button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={14} /></button><button onClick={() => handleDelete(item.id, item.coverImagePublicId)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>

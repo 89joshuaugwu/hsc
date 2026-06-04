@@ -7,12 +7,12 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { Plus, Edit2, Trash2, X, Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { CldUploadWidget } from "next-cloudinary";
+import { ImageUpload } from "@/components/admin/upload/ImageUpload";
 
 const ICONS = ["Music", "BookOpen", "Mic", "Heart", "Users", "Camera", "Monitor", "Shield", "Headphones", "Pen", "Cross", "Flame", "Star", "Globe", "Zap", "Award", "Bell", "Gift", "Sun", "Moon"];
 
-interface Dept { id: string; name: string; description: string; icon: string; slug: string; headName: string; activities: string[]; meetingSchedule: string; contactWhatsApp: string; coverImageUrl: string; isActive: boolean; order: number; }
-type FormData = { name: string; description: string; icon: string; headName: string; activities: { value: string }[]; meetingSchedule: string; contactWhatsApp: string; coverImageUrl: string; isActive: boolean; };
+interface Dept { id: string; name: string; description: string; icon: string; slug: string; headName: string; activities: string[]; meetingSchedule: string; contactWhatsApp: string; coverImageUrl: string; coverImagePublicId?: string; isActive: boolean; order: number; }
+type FormData = { name: string; description: string; icon: string; headName: string; activities: { value: string }[]; meetingSchedule: string; contactWhatsApp: string; coverImageUrl: string; coverImagePublicId: string; isActive: boolean; };
 
 function slugify(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
 
@@ -22,7 +22,7 @@ export default function AdminDepartmentsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const { register, handleSubmit, reset, setValue, control } = useForm<FormData>({ defaultValues: { isActive: true, icon: "Users", activities: [{ value: "" }] } });
+  const { register, handleSubmit, reset, setValue, watch, control } = useForm<FormData>({ defaultValues: { isActive: true, icon: "Users", activities: [{ value: "" }] } });
   const { fields, append, remove } = useFieldArray({ control, name: "activities" });
 
   const fetchAll = async () => {
@@ -38,10 +38,10 @@ export default function AdminDepartmentsPage() {
   const onSave = async (data: FormData) => {
     setSaving(true);
     try {
-      const payload = { name: data.name, description: data.description, icon: data.icon, slug: slugify(data.name), headName: data.headName, activities: data.activities.map((a) => a.value).filter(Boolean), meetingSchedule: data.meetingSchedule, contactWhatsApp: data.contactWhatsApp, coverImageUrl: data.coverImageUrl, isActive: data.isActive };
+      const payload = { name: data.name, description: data.description, icon: data.icon, slug: slugify(data.name), headName: data.headName, activities: data.activities.map((a) => a.value).filter(Boolean), meetingSchedule: data.meetingSchedule, contactWhatsApp: data.contactWhatsApp, coverImageUrl: data.coverImageUrl, coverImagePublicId: data.coverImagePublicId || null, isActive: data.isActive };
       if (editId) { await updateDoc(doc(db, "departments", editId), { ...payload, updatedAt: Timestamp.now() }); toast.success("Updated!"); }
       else { await addDoc(collection(db, "departments"), { ...payload, order: items.length + 1, createdAt: Timestamp.now() }); toast.success("Created!"); }
-      setShowForm(false); setEditId(null); reset({ isActive: true, icon: "Users", activities: [{ value: "" }] }); fetchAll();
+      setShowForm(false); setEditId(null); reset({ isActive: true, icon: "Users", activities: [{ value: "" }], coverImageUrl: "", coverImagePublicId: "" }); fetchAll();
     } catch { toast.error("Save failed."); } finally { setSaving(false); }
   };
 
@@ -50,21 +50,22 @@ export default function AdminDepartmentsPage() {
     setValue("icon", item.icon); setValue("headName", item.headName);
     setValue("activities", (item.activities || []).map((a) => ({ value: a })));
     setValue("meetingSchedule", item.meetingSchedule || ""); setValue("contactWhatsApp", item.contactWhatsApp || "");
-    setValue("coverImageUrl", item.coverImageUrl || ""); setValue("isActive", item.isActive);
+    setValue("coverImageUrl", item.coverImageUrl || ""); setValue("coverImagePublicId", item.coverImagePublicId || ""); setValue("isActive", item.isActive);
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, publicId?: string) => {
     if (!confirm("Delete this department?")) return;
-    try { await deleteDoc(doc(db, "departments", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Delete failed."); }
+    try { 
+      if (publicId) {
+        await fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId }) });
+      }
+      await deleteDoc(doc(db, "departments", id)); 
+      setItems((p) => p.filter((i) => i.id !== id)); 
+      toast.success("Deleted."); 
+    } catch { toast.error("Delete failed."); }
   };
 
-  const handleUploadSuccess = (result: { info?: { secure_url?: string } }) => {
-    if (result?.info?.secure_url) {
-      setValue("coverImageUrl", result.info.secure_url);
-      toast.success("Image uploaded!");
-    }
-  };
 
   const handleReorder = async (id: string, dir: "up" | "down") => {
     const idx = items.findIndex((i) => i.id === id);
@@ -100,14 +101,19 @@ export default function AdminDepartmentsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input {...register("contactWhatsApp")} placeholder="WhatsApp number" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-            <div className="flex gap-2">
-              <input {...register("coverImageUrl")} placeholder="Cover image URL" className="flex-1 px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-              <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string } })}>
-                {({ open }) => (
-                  <button type="button" onClick={() => open()} className="px-4 py-2 bg-chapel-400/10 text-chapel-400 font-body text-sm font-semibold rounded-lg hover:bg-chapel-400/20 whitespace-nowrap">Upload</button>
-                )}
-              </CldUploadWidget>
-            </div>
+            <ImageUpload
+              label="Cover Image"
+              hint="Recommended: 1200×600px, JPG or PNG"
+              value={watch("coverImageUrl")}
+              onChange={(url, publicId) => {
+                setValue("coverImageUrl", url);
+                setValue("coverImagePublicId", publicId);
+              }}
+              onRemove={() => {
+                setValue("coverImageUrl", "");
+                setValue("coverImagePublicId", "");
+              }}
+            />
           </div>
           <div>
             <label className="block font-body text-xs font-semibold text-text-muted mb-2">Activities</label>
@@ -141,7 +147,7 @@ export default function AdminDepartmentsPage() {
               <button onClick={() => handleReorder(item.id, "up")} className="p-1.5 rounded text-text-light hover:text-chapel-400"><ArrowUp size={14} /></button>
               <button onClick={() => handleReorder(item.id, "down")} className="p-1.5 rounded text-text-light hover:text-chapel-400"><ArrowDown size={14} /></button>
               <button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={14} /></button>
-              <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
+              <button onClick={() => handleDelete(item.id, item.coverImagePublicId)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
             </div>
           </div>
         ))}

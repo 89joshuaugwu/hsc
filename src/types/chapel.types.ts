@@ -30,6 +30,7 @@ export interface ChapelInfo {
   socials: Socials;
   serviceTimes: ServiceTime[];
   heroImageUrl: string;
+  heroImagePublicId?: string;
   aboutContent: string;
   missionStatement: string;
   visionStatement: string;
@@ -49,6 +50,7 @@ export interface Department {
   headName: string;
   headPhotoUrl?: string;
   coverImageUrl: string;
+  coverImagePublicId?: string;
   activities: string[];
   meetingSchedule: string;
   contactWhatsApp?: string;
@@ -80,6 +82,7 @@ export interface ChapelEvent {
   endDate: Timestamp;
   location: string;
   coverImageUrl: string;
+  coverImagePublicId?: string;
   isFeatured: boolean;
   requiresRegistration: boolean;
   registrationUrl?: string;
@@ -142,6 +145,7 @@ export interface GiveOption {
   slug: string;
   description: string;
   coverImageUrl: string;
+  coverImagePublicId?: string;
   goalAmount?: number;
   totalReceived: number;
   paystackEnabled: boolean;

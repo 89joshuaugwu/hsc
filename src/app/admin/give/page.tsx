@@ -8,10 +8,10 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { Plus, Edit2, Trash2, X, Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { cn, slugify } from "@/lib/utils";
 import { toast } from "sonner";
-import { CldUploadWidget } from "next-cloudinary";
+import { ImageUpload } from "@/components/admin/upload/ImageUpload";
 
-interface GiveOption { id: string; title: string; slug: string; description: string; coverImageUrl: string; goalAmount: number | null; totalReceived: number; paystackEnabled: boolean; bankTransferEnabled: boolean; bankAccounts: { bankName: string; accountNumber: string; accountName: string; }[]; sortOrder: number; isActive: boolean; }
-type FormData = { title: string; slug: string; description: string; coverImageUrl: string; goalAmount: number | null; paystackEnabled: boolean; bankTransferEnabled: boolean; bankAccounts: { bankName: string; accountNumber: string; accountName: string; }[]; isActive: boolean; };
+interface GiveOption { id: string; title: string; slug: string; description: string; coverImageUrl: string; coverImagePublicId?: string; goalAmount: number | null; totalReceived: number; paystackEnabled: boolean; bankTransferEnabled: boolean; bankAccounts: { bankName: string; accountNumber: string; accountName: string; }[]; sortOrder: number; isActive: boolean; }
+type FormData = { title: string; slug: string; description: string; coverImageUrl: string; coverImagePublicId: string; goalAmount: number | null; paystackEnabled: boolean; bankTransferEnabled: boolean; bankAccounts: { bankName: string; accountNumber: string; accountName: string; }[]; isActive: boolean; };
 
 export default function AdminGivePage() {
   const [items, setItems] = useState<GiveOption[]>([]);
@@ -21,7 +21,7 @@ export default function AdminGivePage() {
   const [saving, setSaving] = useState(false);
   
   const { register, handleSubmit, reset, setValue, control, watch } = useForm<FormData>({ 
-    defaultValues: { isActive: true, paystackEnabled: true, bankTransferEnabled: true, bankAccounts: [{ bankName: "", accountNumber: "", accountName: "" }] } 
+    defaultValues: { isActive: true, paystackEnabled: true, bankTransferEnabled: true, bankAccounts: [{ bankName: "", accountNumber: "", accountName: "" }], coverImageUrl: "", coverImagePublicId: "" } 
   });
   const { fields, append, remove } = useFieldArray({ control, name: "bankAccounts" });
   
@@ -59,6 +59,7 @@ export default function AdminGivePage() {
         slug: slugToSave, 
         description: data.description, 
         coverImageUrl: data.coverImageUrl, 
+        coverImagePublicId: data.coverImagePublicId || null,
         goalAmount: data.goalAmount || null, 
         paystackEnabled: data.paystackEnabled, 
         bankTransferEnabled: data.bankTransferEnabled, 
@@ -75,7 +76,7 @@ export default function AdminGivePage() {
         toast.success("Created!"); 
       }
       setShowForm(false); setEditId(null); 
-      reset({ isActive: true, paystackEnabled: true, bankTransferEnabled: true, bankAccounts: [{ bankName: "", accountNumber: "", accountName: "" }] }); 
+      reset({ isActive: true, paystackEnabled: true, bankTransferEnabled: true, bankAccounts: [{ bankName: "", accountNumber: "", accountName: "" }], coverImageUrl: "", coverImagePublicId: "" }); 
       fetchAll();
     } catch { toast.error("Save failed."); } finally { setSaving(false); }
   };
@@ -86,6 +87,7 @@ export default function AdminGivePage() {
     setValue("slug", item.slug); 
     setValue("description", item.description);
     setValue("coverImageUrl", item.coverImageUrl || ""); 
+    setValue("coverImagePublicId", item.coverImagePublicId || ""); 
     setValue("goalAmount", item.goalAmount || null);
     setValue("paystackEnabled", item.paystackEnabled ?? true);
     setValue("bankTransferEnabled", item.bankTransferEnabled ?? true);
@@ -94,9 +96,12 @@ export default function AdminGivePage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, publicId?: string) => {
     if (!confirm("Delete this give option? This cannot be undone.")) return;
     try { 
+      if (publicId) {
+        await fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId }) });
+      }
       await deleteDoc(doc(db, "give_options", id)); 
       setItems((p) => p.filter((i) => i.id !== id)); 
       toast.success("Deleted."); 
@@ -114,18 +119,12 @@ export default function AdminGivePage() {
     } catch { toast.error("Reorder failed."); }
   };
 
-  const handleUploadSuccess = (result: { info?: { secure_url?: string } }) => {
-    if (result?.info?.secure_url) {
-      setValue("coverImageUrl", result.info.secure_url);
-      toast.success("Image uploaded!");
-    }
-  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="font-heading text-lg font-bold text-navy-500">Give Options</h2>
-        <button onClick={() => { setShowForm(true); setEditId(null); reset({ isActive: true, paystackEnabled: true, bankTransferEnabled: true, bankAccounts: [{ bankName: "", accountNumber: "", accountName: "" }] }); }} className="inline-flex items-center gap-1 px-4 py-2 bg-gold-500 text-navy-700 font-body text-sm font-bold rounded-lg hover:bg-gold-600"><Plus size={16} />Add New Give Option</button>
+        <button onClick={() => { setShowForm(true); setEditId(null); reset({ isActive: true, paystackEnabled: true, bankTransferEnabled: true, bankAccounts: [{ bankName: "", accountNumber: "", accountName: "" }], coverImageUrl: "", coverImagePublicId: "" }); }} className="inline-flex items-center gap-1 px-4 py-2 bg-gold-500 text-navy-700 font-body text-sm font-bold rounded-lg hover:bg-gold-600"><Plus size={16} />Add New Give Option</button>
       </div>
 
       {showForm && (
@@ -150,15 +149,19 @@ export default function AdminGivePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-body text-xs font-semibold text-text-muted mb-1">Cover Image URL</label>
-              <div className="flex gap-2">
-                <input {...register("coverImageUrl", { required: true })} placeholder="Cloudinary URL" className="flex-1 px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-                <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string } })}>
-                  {({ open }) => (
-                    <button type="button" onClick={() => open()} className="px-4 py-2 bg-chapel-400/10 text-chapel-400 font-body text-sm font-semibold rounded-lg hover:bg-chapel-400/20 whitespace-nowrap">Upload</button>
-                  )}
-                </CldUploadWidget>
-              </div>
+              <ImageUpload
+                label="Cover Image"
+                hint="Recommended: 1200×600px, JPG or PNG"
+                value={watch("coverImageUrl")}
+                onChange={(url, publicId) => {
+                  setValue("coverImageUrl", url);
+                  setValue("coverImagePublicId", publicId);
+                }}
+                onRemove={() => {
+                  setValue("coverImageUrl", "");
+                  setValue("coverImagePublicId", "");
+                }}
+              />
             </div>
             <div>
               <label className="block font-body text-xs font-semibold text-text-muted mb-1">Goal Amount (Optional, ₦)</label>
@@ -239,7 +242,7 @@ export default function AdminGivePage() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={16} /></button>
+                  <button onClick={() => handleDelete(item.id, item.coverImagePublicId)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={16} /></button>
                 </div>
               </div>
             </div>
