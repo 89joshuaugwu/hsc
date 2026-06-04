@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   { label: "Events", href: "/admin/events", icon: Calendar },
   { label: "Departments", href: "/admin/departments", icon: Users },
   { label: "Gallery", href: "/admin/gallery", icon: ImageIcon },
-  { label: "Give Options", href: "/admin/give", icon: Gift },
+  { label: "Give Options", href: "/admin/give", icon: Heart },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Subscribers", href: "/admin/subscribers", icon: UserCheck },
   { label: "Messages", href: "/admin/contact-messages", icon: Mail },
