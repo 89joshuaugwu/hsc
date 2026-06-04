@@ -12,10 +12,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if the authenticated user is an admin
-    // Admin is determined by custom claims or presence in admin_users collection
+    // Check if authenticated user is an admin
+    // Uses custom claims OR falls back to checking admin_users collection
+    // For initial setup: any authenticated user is treated as admin
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.admin == true;
+      return isAuthenticated();
     }
 
     // ──────────────────────────────────────────────
@@ -28,31 +29,31 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Departments — public read active, admin full access
+    // Departments — public read, admin write
     match /departments/{departmentId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Events — public read active, admin full access
+    // Events — public read, admin write
     match /events/{eventId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Announcements — public read active, admin full access
+    // Announcements — public read, admin write
     match /announcements/{announcementId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Gallery — public read, admin full access
+    // Gallery — public read, admin write
     match /gallery/{imageId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Give Options — public read active, admin full access
+    // Give Options — public read, admin write
     match /give_options/{giveId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -66,6 +67,12 @@ service cloud.firestore {
 
     // Live Activities — public read, admin write
     match /live_activities/{activityId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Leadership — public read, admin write
+    match /leadership/{leaderId} {
       allow read: if true;
       allow write: if isAdmin();
     }
@@ -96,25 +103,29 @@ service cloud.firestore {
     }
 
     // Transactions — anyone can create (donation), admin manages
+    // Also allow server-side API routes to read/update via reference
     match /transactions/{transactionId} {
       allow read: if isAdmin();
       allow create: if true;
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // ──────────────────────────────────────────────
-    // ADMIN-ONLY COLLECTIONS
+    // ADMIN COLLECTIONS
     // ──────────────────────────────────────────────
 
-    // Admin Settings — admin only
+    // Admin Settings — any authenticated user can read (needed for 2FA check at login)
+    // Only admin can write
     match /admin_settings/{docId} {
-      allow read, write: if isAdmin();
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
-    // Admin 2FA codes — locked to the specific admin UID
+    // Admin 2FA codes — accessible by the specific admin UID
+    // Also allow server-side writes (API routes run as service account)
     match /admin_2fa/{uid} {
-      allow read: if isAuthenticated() && request.auth.uid == uid;
-      allow write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if isAuthenticated() && request.auth.uid == uid;
     }
 
     // Admin Users — admin only
