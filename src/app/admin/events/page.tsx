@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Plus, Edit2, Trash2, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { CldUploadWidget } from "next-cloudinary";
 
 interface EventItem { id: string; title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; createdAt: { toDate: () => Date }; }
 type FormData = { title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; };
@@ -61,6 +62,13 @@ export default function AdminEventsPage() {
     try { await deleteDoc(doc(db, "events", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Delete failed."); }
   };
 
+  const handleUploadSuccess = (result: { info?: { secure_url?: string } }) => {
+    if (result?.info?.secure_url) {
+      setValue("coverImageUrl", result.info.secure_url);
+      toast.success("Image uploaded!");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -85,7 +93,14 @@ export default function AdminEventsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input {...register("location")} placeholder="Location" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-            <input {...register("coverImageUrl")} placeholder="Cover image URL (Cloudinary)" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+            <div className="flex gap-2">
+              <input {...register("coverImageUrl")} placeholder="Cover image URL" className="flex-1 px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+              <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string } })}>
+                {({ open }) => (
+                  <button type="button" onClick={() => open()} className="px-4 py-2 bg-chapel-400/10 text-chapel-400 font-body text-sm font-semibold rounded-lg hover:bg-chapel-400/20 whitespace-nowrap">Upload</button>
+                )}
+              </CldUploadWidget>
+            </div>
           </div>
           <div className="flex flex-wrap gap-4">
             <label className="flex items-center gap-2 font-body text-sm"><input type="checkbox" {...register("isFeatured")} />Featured</label>

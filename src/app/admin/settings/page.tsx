@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { CldUploadWidget } from "next-cloudinary";
 
 /* ─── Types ─── */
 interface SettingsForm {
@@ -164,6 +165,13 @@ export default function AdminSettingsPage() {
       toast.error("Failed to save. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUploadSuccess = (result: { info?: { secure_url?: string } }) => {
+    if (result?.info?.secure_url) {
+      chapelForm.setValue("heroImageUrl", result.info.secure_url, { shouldDirty: true });
+      toast.success("Hero image uploaded!");
     }
   };
 
@@ -350,7 +358,14 @@ export default function AdminSettingsPage() {
           {/* Hero Image URL */}
           <div>
             <label className="block font-body text-xs font-semibold text-text-muted mb-1">Hero Image URL</label>
-            <input {...chapelForm.register("heroImageUrl")} placeholder="Cloudinary URL" className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+            <div className="flex gap-2">
+              <input {...chapelForm.register("heroImageUrl")} placeholder="Cloudinary URL" className="flex-1 px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+              <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string } })}>
+                {({ open }) => (
+                  <button type="button" onClick={() => open()} className="px-4 py-2 bg-chapel-400/10 text-chapel-400 font-body text-sm font-semibold rounded-lg hover:bg-chapel-400/20 whitespace-nowrap">Upload</button>
+                )}
+              </CldUploadWidget>
+            </div>
           </div>
 
           {/* Mission / Vision */}

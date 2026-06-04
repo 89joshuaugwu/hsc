@@ -7,6 +7,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { Plus, Edit2, Trash2, X, Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { CldUploadWidget } from "next-cloudinary";
 
 const ICONS = ["Music", "BookOpen", "Mic", "Heart", "Users", "Camera", "Monitor", "Shield", "Headphones", "Pen", "Cross", "Flame", "Star", "Globe", "Zap", "Award", "Bell", "Gift", "Sun", "Moon"];
 
@@ -58,6 +59,13 @@ export default function AdminDepartmentsPage() {
     try { await deleteDoc(doc(db, "departments", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Delete failed."); }
   };
 
+  const handleUploadSuccess = (result: { info?: { secure_url?: string } }) => {
+    if (result?.info?.secure_url) {
+      setValue("coverImageUrl", result.info.secure_url);
+      toast.success("Image uploaded!");
+    }
+  };
+
   const handleReorder = async (id: string, dir: "up" | "down") => {
     const idx = items.findIndex((i) => i.id === id);
     const swap = dir === "up" ? idx - 1 : idx + 1;
@@ -92,7 +100,14 @@ export default function AdminDepartmentsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input {...register("contactWhatsApp")} placeholder="WhatsApp number" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-            <input {...register("coverImageUrl")} placeholder="Cover image URL" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+            <div className="flex gap-2">
+              <input {...register("coverImageUrl")} placeholder="Cover image URL" className="flex-1 px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+              <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string } })}>
+                {({ open }) => (
+                  <button type="button" onClick={() => open()} className="px-4 py-2 bg-chapel-400/10 text-chapel-400 font-body text-sm font-semibold rounded-lg hover:bg-chapel-400/20 whitespace-nowrap">Upload</button>
+                )}
+              </CldUploadWidget>
+            </div>
           </div>
           <div>
             <label className="block font-body text-xs font-semibold text-text-muted mb-2">Activities</label>

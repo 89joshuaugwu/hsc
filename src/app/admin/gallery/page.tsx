@@ -80,7 +80,7 @@ export default function AdminGalleryPage() {
           )}
           <CldUploadWidget uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} onSuccess={(result) => handleUploadSuccess(result as { info?: { secure_url?: string; width?: number; height?: number } })} options={{ multiple: true, maxFiles: 10 }}>
             {({ open }) => (
-              <button onClick={() => open()} className="inline-flex items-center gap-1 px-4 py-2 bg-chapel-400 text-white font-body text-sm font-bold rounded-lg hover:bg-chapel-500">Upload Photos</button>
+              <button type="button" onClick={() => open()} className="inline-flex items-center gap-1 px-4 py-2 bg-chapel-400 text-white font-body text-sm font-bold rounded-lg hover:bg-chapel-500">Upload Photos</button>
             )}
           </CldUploadWidget>
         </div>
