@@ -6,6 +6,9 @@ import {
   Cormorant_Garamond,
 } from "next/font/google";
 import { Toaster } from "sonner";
+import { NavBar } from "@/components/layout/NavBar";
+import { Footer } from "@/components/layout/Footer";
+import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import "./globals.css";
 
 /* =============================================
@@ -98,7 +101,10 @@ export default function RootLayout({
       className={`${cinzel.variable} ${libreBaskerville.variable} ${nunito.variable} ${cormorantGaramond.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-ivory text-text font-body">
-        {children}
+        <NavBar />
+        <AnnouncementBanner />
+        <main className="flex-grow">{children}</main>
+        <Footer />
         <Toaster
           position="top-right"
           richColors
