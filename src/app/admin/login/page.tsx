@@ -39,8 +39,16 @@ export default function AdminLoginPage() {
       } else {
         router.push("/admin");
       }
-    } catch {
-      toast.error("Invalid credentials. Please try again.");
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      console.error("Login error:", error?.code, error?.message);
+      if (error?.code === "auth/invalid-credential" || error?.code === "auth/wrong-password" || error?.code === "auth/user-not-found") {
+        toast.error("Invalid credentials. Please try again.");
+      } else if (error?.code === "auth/too-many-requests") {
+        toast.error("Too many attempts. Please try again later.");
+      } else {
+        toast.error(`Login failed: ${error?.message || "Unknown error"}`);
+      }
     } finally {
       setLoading(false);
     }

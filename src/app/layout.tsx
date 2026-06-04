@@ -6,9 +6,7 @@ import {
   Cormorant_Garamond,
 } from "next/font/google";
 import { Toaster } from "sonner";
-import { NavBar } from "@/components/layout/NavBar";
-import { Footer } from "@/components/layout/Footer";
-import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
+import { LayoutShell } from "@/components/layout/LayoutShell";
 import "./globals.css";
 
 /* =============================================
@@ -46,7 +44,7 @@ const cormorantGaramond = Cormorant_Garamond({
 });
 
 /* =============================================
-   Metadata — SEO
+   Metadata — SEO + Favicon
    ============================================= */
 
 export const metadata: Metadata = {
@@ -66,6 +64,11 @@ export const metadata: Metadata = {
     "ASF ESUT",
   ],
   authors: [{ name: "Holy Spirit Chapel ESUT Agbani" }],
+  icons: {
+    icon: "/clogo.png",
+    shortcut: "/clogo.png",
+    apple: "/clogo.png",
+  },
   openGraph: {
     title: "Holy Spirit Chapel ESUT Agbani",
     description:
@@ -101,10 +104,7 @@ export default function RootLayout({
       className={`${cinzel.variable} ${libreBaskerville.variable} ${nunito.variable} ${cormorantGaramond.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-ivory text-text font-body">
-        <NavBar />
-        <AnnouncementBanner />
-        <main className="flex-grow">{children}</main>
-        <Footer />
+        <LayoutShell>{children}</LayoutShell>
         <Toaster
           position="top-right"
           richColors
@@ -118,3 +118,4 @@ export default function RootLayout({
     </html>
   );
 }
+

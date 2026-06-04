@@ -1,20 +1,21 @@
 import { HeroSection } from "@/components/home/HeroSection";
-import { LiveActivityStrip } from "@/components/home/LiveActivityStrip";
+import { AnnouncementsSection } from "@/components/home/AnnouncementsSection";
+import { EventsSection } from "@/components/home/EventsSection";
+import { DepartmentsStrip } from "@/components/home/DepartmentsStrip";
+import { ScriptureSection } from "@/components/home/ScriptureSection";
+import { FellowshipSection } from "@/components/home/FellowshipSection";
+import { GalleryTeaser } from "@/components/home/GalleryTeaser";
 
 export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <LiveActivityStrip />
-
-      {/* Remaining homepage sections will be added in subsequent prompts:
-          - Announcements Section
-          - Upcoming Events Section
-          - Departments Quick Links
-          - Scripture / Mission Quote
-          - Fellowship Callout
-          - Gallery Teaser
-      */}
+      <AnnouncementsSection />
+      <EventsSection />
+      <DepartmentsStrip />
+      <ScriptureSection />
+      <FellowshipSection />
+      <GalleryTeaser />
     </>
   );
 }

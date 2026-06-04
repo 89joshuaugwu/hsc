@@ -2353,3 +2353,6 @@ These features were scoped out of v1. Suggest to client after v1 launch:
 9. **Firestore real-time**: Use `onSnapshot` ONLY for live_status. All other data use `getDocs` / `getDoc` (SSR-friendly).
 10. **All monetary amounts**: Store and process in kobo for Paystack (naira × 100). Display as naira (divide ÷ 100, format with ₦).
 ```
+
+
+IamHSCAdmin(2026)
