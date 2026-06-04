@@ -1990,6 +1990,310 @@ src/app/api/admin/verify-2fa/route.ts:
   - Return success/failure
 ```
 
+PROMPT 8 — Complete Home Page (Remaining Sections)
+Complete the home page by building all remaining sections after HeroSection.
+Update src/app/page.tsx to import and render all sections in order.
+
+BUILD these components:
+
+src/components/home/AnnouncementsSection.tsx:
+- Fetch active announcements from Firestore (where isActive==true, orderBy createdAt desc, limit 3)
+- Section header: badge "LATEST UPDATES", title "What's Happening"
+- Layout: featured announcement (large card, 60% width desktop) + 2 side cards (stacked, 40%)
+- Featured card: category badge + "Updated Today" chip if today + title + content + date
+- Side cards: smaller, same structure
+- Background: ivory-dark with subtle CSS dot-grid pattern
+- "View All →" link if more than 3 exist
+- If no announcements: show placeholder "No announcements at this time"
+- Framer Motion stagger entrance on scroll (useInView, once: true)
+
+src/components/home/EventsSection.tsx:
+- Fetch upcoming events from Firestore (where startDate >= now, orderBy startDate, limit 4)
+- Section header: badge "CALENDAR", title "Upcoming Events"
+- First event: FeaturedEvent card (full width, bg image, date, title, location, "Details →")
+- Remaining 3: EventCard grid (3 cols desktop, 1 mobile)
+- EventCard: square Cloudinary image + date badge (navy box "OCT 15") + category chip + title + time + location + "Details →"
+- "View All Events →" link to /events
+- Horizontal scroll on mobile for the 3 cards
+- Stagger animation on scroll
+
+src/components/home/DepartmentsStrip.tsx:
+- Dark section: bg-navy-500
+- Section header: badge "DEPARTMENTS", title "Find Your Place", subtitle text, all white
+- Horizontal scroll row (mobile) / 4-col grid (desktop) of mini department icon cards
+- Each mini-card: circular chapel-blue icon bg + Lucide icon + department name (white)
+- Fetch from Firestore departments collection (limit 8)
+- "View All Departments →" white ghost button at end
+
+src/components/home/ScriptureSection.tsx:
+- Full-width ivory section
+- Large SVG cross watermark centered (opacity-[0.04], chapel blue)
+- Scripture quote from Firestore chapel_info/main.scriptureVerse [Cormorant Garamond italic, 2rem+]
+- Reference below [Cinzel, small, gold]
+- Thin gold horizontal lines left and right of quote (decorative)
+
+src/components/home/FellowshipSection.tsx:
+- Two-column: text left (60%), image right (40%)
+- Left: flogo.png (96px, next/image) + "Anglican Students' Fellowship" [Cinzel] + "ARISE, SHINE" [Cinzel small, crimson-500] + description paragraph + "Join the Fellowship →" button (crimson bg)
+- Right: placeholder image (chapel photo or Cloudinary) with rounded-2xl
+- Background: white
+- Mobile: stacked (image on top)
+
+src/components/home/GalleryTeaser.tsx:
+- Fetch 6 latest active gallery items from Firestore
+- Section header: "Our Community in Focus"
+- 6-image CSS grid (2 cols mobile, 3 cols desktop) — images vary in aspect ratio for mosaic feel
+- Each image: Cloudinary optimized, rounded-xl, hover scale(1.04) + brightness increase
+- "View Full Gallery →" CTA button below grid
+
+Final src/app/page.tsx:
+Import and render in this exact order:
+1. <HeroSection />
+2. <AnnouncementsSection />
+3. <EventsSection />
+4. <DepartmentsStrip />
+5. <ScriptureSection />
+6. <FellowshipSection />
+7. <GalleryTeaser />
+All wrapped in <main>
+
+PROMPT 9 — About Us + Events Pages
+BUILD these complete pages:
+
+src/app/about/page.tsx + components:
+- Fetch chapel_info/main from Firestore (server component)
+- SECTION 1: Hero — full bleed image (chapel_info.heroImageUrl or gradient), navy overlay, "Our Story" [Cinzel], subtitle badge "Holy Spirit Chapel · ESUT Agbani", fadeIn animation
+- SECTION 2: Foundation of Faith — two columns: left (history text from chapel_info.aboutContent), right (blockquote card with chapelMotto "DOMINUS REGNANT" in gold Cinzel + visionStatement in Cormorant italic)
+- SECTION 3: Core Beliefs — 6 icon cards (ivory-dark bg): Faith in Christ, Biblical Foundation, Community Service, Worship, Prayer, Outreach — each with Lucide icon + title + short description, stagger animation
+- SECTION 4: Mission & Vision — full-width navy bg, side by side: Mission (left) | Vision (right), gold divider line, content from chapel_info.missionStatement and visionStatement, white text, Cormorant Garamond for the statements
+- SECTION 5: Fellowship Identity — dedicated section for ASF, flogo.png (120px, light bg), fellowship name [Cinzel], "ARISE, SHINE" motto [crimson], description paragraph, crimson accent throughout
+- SECTION 6: Meet Leadership — fetch from Firestore leadership collection (or hardcode 3 placeholder leaders), 3-col grid cards: Cloudinary photo (aspect-square, rounded-full 80px) + role badge + name [Libre Baskerville] + bio. If no leadership data: hide section gracefully.
+
+src/app/events/page.tsx + components:
+- Hero strip: "Life at the Chapel" title, chapel photo bg + overlay, category filter tabs below: All Events | Worship | Community | Youth | Outreach
+- Fetch all active events from Firestore ordered by startDate asc
+- Featured event (isFeatured==true): FeaturedEvent component — large card full width, bg image, "FEATURED EVENT" gold badge, title, date/time, location, description, "Register Now" primary button + "Add to Calendar" secondary
+- Below featured: toggle between Grid/List view (useState, icon buttons)
+  Grid: 3-col EventCard grid with date badge, image, category, title, time, location, "Details →"
+  List: compact rows same data
+- Filter tabs update displayed events (client-side filter on category)
+- "Load More" button (show 6 initially, load 6 more on click)
+- Newsletter strip at bottom: "Stay in the Loop" + FooterSubscribe component (source tag: 'events_page')
+- Empty state: "No upcoming events. Check back soon." with chapel icon
+
+PROMPT 10 — Gallery + Contact Pages + Core API Routes
+BUILD gallery page, contact page, and 4 API routes:
+
+src/app/gallery/page.tsx:
+- Fetch all active gallery items from Firestore (getDocs, orderBy uploadedAt desc)
+- Hero: "Our Community in Focus", subtitle
+- Filter tabs: All | Worship | Community | Youth | Architecture | Events
+  Active tab: sliding indicator (Framer Motion layoutId)
+  Client-side filter — no re-fetch
+- Masonry grid using CSS columns:
+  mobile: columns-2, tablet: columns-3, desktop: columns-4
+  gap-3, each image: break-inside-avoid mb-3 rounded-xl overflow-hidden
+- Each image: next/image (Cloudinary URL, fill=false, width/height from aspect), hover: brightness(1.1) + scale(1.03) transition-all
+- On click: open LightboxModal
+- LightboxModal (AnimatePresence):
+  Fixed fullscreen dark overlay
+  Image centered, max-h-[85vh], object-contain
+  Caption below (white text)
+  Left/right arrow navigation (keyboard + click)
+  Counter "3 / 24" top right
+  Close X button top left
+  Share button (Web Share API)
+- Stagger entrance: each image delays 40ms × index, useInView
+- Scripture quote section at bottom
+
+src/app/contact/page.tsx:
+- Page title: "We'd Love to Hear From You"
+- Two-column layout (desktop), stacked (mobile)
+- LEFT: Tabs component — "Send a Message" | "Prayer Request" | "Subscribe"
+  TAB 1 — ContactForm:
+    Fields: Name, Email, Subject (select: General / Prayer / Partnership / Other), Message (textarea)
+    Submit: POST /api/contact
+    Success: animated checkmark + "Message sent! We'll respond within 24 hours."
+    Error: toast error
+  TAB 2 — PrayerForm:
+    Fields: Name, Email, Prayer Topic, Request (textarea), "Keep this private" checkbox
+    Submit: POST /api/prayer
+    Success: "Your prayer request has been received. Our prayer team will intercede for you."
+  TAB 3 — Subscribe:
+    FooterSubscribe component (source: 'contact_page')
+- RIGHT:
+  Contact details card: address (ESUT Agbani, Enugu State), phone, email, social icons
+  Service times card: list from Firestore chapel_info/main.serviceTimes
+  MapEmbed: Google Maps iframe for ESUT Agbani (use this src: "https://maps.google.com/maps?q=ESUT+Agbani+Enugu&output=embed"), height 300px, rounded-xl, border border-border
+  "Get Directions" button: opens https://maps.google.com/?q=ESUT+Agbani+Enugu in new tab, chapel-blue bg
+
+BUILD these API routes:
+
+src/app/api/contact/route.ts (POST):
+- Validate body with contactFormSchema (zod)
+- Save to Firestore contact_messages collection with isRead: false
+- Read contactEmails from Firestore admin_settings/config
+- Send admin notification email via sendEmail() — subject "New Message from [name]", HTML shows full message
+- Send auto-reply to user — subject "We received your message | Holy Spirit Chapel", friendly HTML template with chapel styling
+- Return { success: true }
+
+src/app/api/prayer/route.ts (POST):
+- Validate with prayerFormSchema
+- Save to Firestore prayer_requests
+- Read prayerEmail from Firestore admin_settings/config
+- Send to prayer email: full request details (mark as PRIVATE if isPrivate)
+- Send confirmation to user: gentle HTML email "Your prayer has been received..."
+- Return { success: true }
+
+src/app/api/subscribe/route.ts (POST):
+- Validate: name (min 2), email (valid)
+- Check Firestore subscribers: if email exists and isActive: return "Already subscribed"
+- If exists but isActive false: reactivate
+- If new: add doc with generateToken() as unsubscribeToken, source from body
+- Send welcome email: "Welcome to the Holy Spirit Chapel family!"
+- Return { success: true, message: "Subscribed!" }
+
+src/app/api/unsubscribe/[token]/route.ts (GET):
+- Find subscriber by unsubscribeToken field
+- Set isActive: false
+- Return HTML response: simple styled page "You have been unsubscribed. God bless you."
+
+PROMPT 11 — Remaining Admin Pages (Content Management)
+BUILD these admin pages (all protected by admin layout auth guard):
+
+src/app/admin/login/page.tsx:
+- Centered card, dark navy bg (full screen)
+- clogo.png (80px) centered at top
+- "Chapel Admin" title [Cinzel, white]
+- Email + Password inputs (styled per ui-skills)
+- "Sign In" button — gold gradient
+- Firebase Auth signInWithEmailAndPassword on submit
+- On success: check admin_settings/config.twoFAEnabled
+  If true: POST /api/admin/send-2fa → redirect to /admin/verify-2fa
+  If false: redirect to /admin
+- Error: toast.error("Invalid credentials")
+- Loading state on button
+
+src/app/admin/verify-2fa/page.tsx:
+- Same dark bg as login
+- "Check your email" icon (Mail, Lucide, large)
+- Subtitle: "Enter the 6-digit code sent to your admin email"
+- 6 individual digit inputs (auto-focus next on input, backspace goes back)
+- OR single 6-digit input field
+- Submit: POST /api/admin/verify-2fa with { uid, code }
+- On success: set cookie 'admin_verified=true' (httpOnly via route) → redirect /admin
+- Resend code button (60s cooldown timer)
+- "Back to login" link
+
+middleware.ts (root level):
+- Protect all /admin/* routes except /admin/login and /admin/verify-2fa
+- Check for 'admin_token' cookie (set on successful auth)
+- If missing: redirect to /admin/login
+- Also protect /api/admin/* routes
+
+src/app/admin/announcements/page.tsx:
+- Table of all announcements (title, category, active, startDate, actions)
+- "New Announcement" button → inline form or modal
+- Form fields: title, content (textarea), category (select), isPriority (toggle), startDate, endDate (optional), isActive (toggle)
+- Save: addDoc or updateDoc to Firestore announcements
+- Delete: with confirm dialog
+- Edit: prefill form with existing data
+- react-hook-form + zod
+
+src/app/admin/events/page.tsx:
+- Table of all events with filters (upcoming / past / all)
+- "New Event" button → modal form
+- Form: title, description, category, startDate (datetime-local), endDate, location, coverImage (CldUploadWidget), isFeatured toggle, requiresRegistration toggle, registrationUrl (conditional)
+- Save/Edit/Delete with Firestore
+
+src/app/admin/departments/page.tsx:
+- Grid of department cards (reorder by drag — use simple up/down buttons if drag-drop is complex)
+- "Add Department" button → modal form
+- Form: name, description, icon (select from 20 preset Lucide icon names), headName, activities (dynamic add/remove text inputs), meetingSchedule, contactWhatsApp, coverImage (CldUploadWidget), isActive toggle
+- Save/Edit/Delete with Firestore
+- Auto-generate slug from name using slugify()
+
+src/app/admin/gallery/page.tsx:
+- Grid of all gallery images (4 cols, thumbnail size)
+- Multi-upload via CldUploadWidget (multiple: true)
+- On upload success: save each to Firestore gallery collection with category 'community' default
+- Each image: category dropdown (editable inline), caption input, delete button
+- Bulk select: checkboxes + "Delete selected" button
+- Confirmation modal before delete (also deletes from Cloudinary via /api/upload DELETE)
+
+PROMPT 12 — Payments + Subscribers + Final Admin Pages
+BUILD remaining admin pages and complete the admin system:
+
+src/app/admin/payments/page.tsx:
+- Tab bar: All | Pending | Verified | Rejected
+- Table: Donor Name | Email | Phone | Amount (₦) | Give Type | Method | Status badge | Date | Actions
+- Status badges: pending=amber, verified=green, rejected=red
+- For bank_transfer rows with status pending:
+  "View Proof" button → opens modal with full screenshot image
+  "Verify" button → POST /api/admin/payments/verify → updates Firestore status to 'verified' → sends receipt email → refreshes list
+  "Reject" button → prompt for reason → POST /api/admin/payments/reject → sends rejection email
+- Paystack rows: show reference number, status auto-set by webhook
+- Pagination: 20 per page
+
+src/app/api/admin/payments/verify/route.ts (POST):
+- Auth check (admin only)
+- Body: { transactionId }
+- Update Firestore transaction: status='verified', adminVerifiedBy, adminVerifiedAt
+- Fetch transaction details
+- Send receipt email to donor (full chapel-styled HTML receipt with amount, give type, date, transaction ID)
+- Update give_option totalReceived field (increment by amount)
+- Return { success: true }
+
+src/app/api/admin/payments/reject/route.ts (POST):
+- Body: { transactionId, reason }
+- Update status to 'rejected', save rejectionReason
+- Send rejection email to donor: apologetic tone, reason, "Contact us if you believe this is an error"
+- Return { success: true }
+
+src/app/admin/subscribers/page.tsx:
+- Stats: Total subscribers, Active, This month
+- Table: Name | Email | Source | Date | Active toggle | Delete
+- "Send Message" button → opens full-width composer panel:
+  Subject input
+  Message textarea (rich enough for simple formatting)
+  Recipients toggle: "All Subscribers" | "Select Specific"
+  If select specific: scrollable checklist of subscribers
+  Preview button: shows rendered email preview
+  Send button → POST /api/admin/subscribers/send → Nodemailer loop
+  Show progress: "Sending... X of Y"
+
+src/app/api/admin/subscribers/send/route.ts (POST):
+- Auth check
+- Body: { subject, message, recipientIds (array or 'all') }
+- Fetch relevant subscribers from Firestore (isActive == true)
+- Loop send via sendEmail() with personalized greeting + unsubscribe link
+- Each email: "Dear [name]," + message + "\n\n---\nUnsubscribe: [appUrl]/api/unsubscribe/[token]"
+- Return { success: true, sent: count }
+
+src/app/admin/contact-messages/page.tsx:
+- Table: Name | Email | Subject | Date | Read status
+- Click row: expand to show full message inline OR side panel
+- Mark as read on open (updateDoc isRead: true)
+- Delete button with confirm
+- Unread count badge on admin sidebar nav item
+
+src/app/admin/prayer-requests/page.tsx:
+- Table: Name | Topic | Private? | Date
+- Click to view full request in modal
+- Private requests: show lock icon, content blurred until "View" clicked
+- Delete with confirm (sensitive data)
+- Note at top: "Handle with care and confidentiality"
+
+FINAL CHECKS:
+1. Ensure middleware.ts is protecting all /admin/* routes
+2. Ensure all Firestore writes have proper error handling with try/catch
+3. Ensure all email sends have try/catch (email failure should not break form submission)
+4. Add loading states to ALL async operations (buttons show spinner while submitting)
+5. Add empty states to ALL tables and grids (when no data exists)
+6. Run npx tsc --noEmit and fix all TypeScript errors
+7. Test the full user journey: subscribe → give (Paystack) → give (bank transfer) → contact form → prayer request
+8. Confirm all 7 email templates send correctly via the test email button in Settings
+
 ---
 
 ## 19. SKILLS TO INSTALL IN ANTIGRAVITY IDE
