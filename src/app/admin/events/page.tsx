@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/upload/ImageUpload";
 
-interface EventItem { id: string; title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; coverImagePublicId?: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; createdAt: { toDate: () => Date }; }
+interface EventItem { id: string; title: string; description: string; category: string; startDate: { toDate: () => Date } | null; endDate: { toDate: () => Date } | null; location: string; coverImageUrl: string; coverImagePublicId?: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; createdAt: { toDate: () => Date }; }
 type FormData = { title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; coverImagePublicId: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; };
 
 export default function AdminEventsPage() {
@@ -32,8 +32,8 @@ export default function AdminEventsPage() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  const now = new Date().toISOString();
-  const filtered = filter === "upcoming" ? items.filter((e) => e.startDate >= now) : filter === "past" ? items.filter((e) => e.startDate < now) : items;
+  const now = new Date();
+  const filtered = filter === "upcoming" ? items.filter((e) => e.startDate && e.startDate.toDate() >= now) : filter === "past" ? items.filter((e) => e.startDate && e.startDate.toDate() < now) : items;
 
   const onSave = async (data: FormData) => {
     setSaving(true);
@@ -45,15 +45,21 @@ export default function AdminEventsPage() {
     } catch { toast.error("Save failed."); } finally { setSaving(false); }
   };
 
+  const formatForInput = (ts: any) => {
+    if (!ts || !ts.toDate) return "";
+    const d = ts.toDate();
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
   const handleEdit = (item: EventItem) => {
     setEditId(item.id);
     setValue("title", item.title); setValue("description", item.description); setValue("category", item.category);
     setValue("location", item.location); setValue("coverImageUrl", item.coverImageUrl || ""); setValue("coverImagePublicId", item.coverImagePublicId || "");
     setValue("isFeatured", item.isFeatured); setValue("requiresRegistration", item.requiresRegistration);
     setValue("registrationUrl", item.registrationUrl || ""); setValue("isActive", item.isActive);
-    // Convert Timestamp to datetime-local string
-    const sd = item.startDate; setValue("startDate", typeof sd === "string" ? sd : "");
-    const ed = item.endDate; setValue("endDate", typeof ed === "string" ? ed : "");
+    setValue("startDate", formatForInput(item.startDate));
+    setValue("endDate", formatForInput(item.endDate));
     setShowForm(true);
   };
 
