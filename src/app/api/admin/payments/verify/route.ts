@@ -15,7 +15,17 @@ export async function POST(req: NextRequest) {
     const tx = txSnap.data()!;
     await txRef.update({ status: "verified", adminVerifiedAt: FieldValue.serverTimestamp() });
 
-    const amountNaira = (tx.amount / 100).toLocaleString("en-NG", { minimumFractionDigits: 2 });
+    if (tx.giveOptionId) {
+      try {
+        await adminDb.collection("give_options").doc(tx.giveOptionId).update({
+          totalReceived: FieldValue.increment(Number(tx.amount))
+        });
+      } catch (e) {
+        console.error("Failed to increment goal amount:", e);
+      }
+    }
+
+    const amountNaira = Number(tx.amount).toLocaleString("en-NG", { minimumFractionDigits: 2 });
 
     try {
       await sendEmail({

@@ -230,6 +230,19 @@ export default function AdminGivePage() {
               
               <p className="font-body text-xs text-text-muted line-clamp-2 mb-3 flex-1">{item.description}</p>
               
+              <div className="bg-ivory/50 rounded-lg p-2.5 mb-3 border border-border/40 space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-body text-[0.7rem] text-text-muted font-semibold uppercase tracking-wider">Revenue</span>
+                  <span className="font-body text-xs font-bold text-navy-500">₦{(item.totalReceived || 0).toLocaleString()}</span>
+                </div>
+                {item.goalAmount ? (
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.7rem] text-text-muted font-semibold uppercase tracking-wider">Goal</span>
+                    <span className="font-body text-xs font-bold text-gold-600">₦{item.goalAmount.toLocaleString()}</span>
+                  </div>
+                ) : null}
+              </div>
+
               <div className="flex flex-wrap gap-1 mb-4">
                 <span className={cn("px-2 py-0.5 font-body text-[0.6rem] font-bold rounded-md", item.paystackEnabled ? "bg-blue-100 text-blue-700" : "bg-ivory text-text-light")}>Paystack {item.paystackEnabled ? "ON" : "OFF"}</span>
                 <span className={cn("px-2 py-0.5 font-body text-[0.6rem] font-bold rounded-md", item.bankTransferEnabled ? "bg-amber-100 text-amber-700" : "bg-ivory text-text-light")}>Bank {item.bankTransferEnabled ? "ON" : "OFF"}</span>

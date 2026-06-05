@@ -63,12 +63,29 @@ export async function POST(req: NextRequest) {
 
     const txData = txSnap.data()!;
 
+    if (txData.status === "verified") {
+      return NextResponse.json({
+        success: true,
+        message: "Payment already verified",
+      });
+    }
+
     await txRef.update({
       status: "verified",
       paystackReference: reference,
       updatedAt: FieldValue.serverTimestamp(),
       receiptEmailSent: true,
     });
+
+    if (txData.giveOptionId) {
+      try {
+        await adminDb.collection("give_options").doc(txData.giveOptionId).update({
+          totalReceived: FieldValue.increment(Number(txData.amount))
+        });
+      } catch (e) {
+        console.error("Failed to increment goal amount:", e);
+      }
+    }
 
     // 3. Send receipt email
     try {

@@ -65,6 +65,16 @@ export async function POST(req: NextRequest) {
       receiptEmailSent: true,
     });
 
+    if (txData.giveOptionId) {
+      try {
+        await adminDb.collection("give_options").doc(txData.giveOptionId).update({
+          totalReceived: FieldValue.increment(Number(txData.amount))
+        });
+      } catch (e) {
+        console.error("Failed to increment goal amount:", e);
+      }
+    }
+
     // 5. Send receipt email
     try {
       const { subject, html } = paymentReceiptEmail({
