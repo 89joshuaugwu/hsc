@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
+import { adminDb } from "@/lib/firebase-admin";
 import { sendEmail } from "@/lib/nodemailer";
-
-const cfg = { apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY, authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID };
-const app = getApps().length ? getApps()[0] : initializeApp(cfg);
-const db = getFirestore(app);
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,13 +11,12 @@ export async function POST(req: NextRequest) {
     let subscribers: { name: string; email: string; unsubscribeToken: string }[] = [];
 
     if (recipientIds === "all") {
-      const q = query(collection(db, "subscribers"), where("isActive", "==", true));
-      const snap = await getDocs(q);
+      const snap = await adminDb.collection("subscribers").where("isActive", "==", true).get();
       subscribers = snap.docs.map((d) => d.data() as { name: string; email: string; unsubscribeToken: string });
     } else if (Array.isArray(recipientIds)) {
       for (const id of recipientIds) {
-        const snap = await getDoc(doc(db, "subscribers", id));
-        if (snap.exists() && snap.data().isActive) subscribers.push(snap.data() as { name: string; email: string; unsubscribeToken: string });
+        const snap = await adminDb.collection("subscribers").doc(id).get();
+        if (snap.exists && snap.data()?.isActive) subscribers.push(snap.data() as { name: string; email: string; unsubscribeToken: string });
       }
     }
 

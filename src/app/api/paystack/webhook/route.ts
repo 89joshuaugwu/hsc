@@ -1,29 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  Timestamp,
-} from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
 import { paymentReceiptEmail } from "@/lib/email-templates";
 import { formatNaira } from "@/lib/utils";
 import crypto from "crypto";
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
 
 /**
  * POST /api/paystack/webhook
@@ -62,12 +45,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Find matching transaction in Firestore
-    const q = query(
-      collection(db, "transactions"),
-      where("paystackReference", "==", reference),
-      where("status", "==", "pending")
-    );
-    const snap = await getDocs(q);
+    const snap = await adminDb.collection("transactions")
+      .where("paystackReference", "==", reference)
+      .where("status", "==", "pending")
+      .get();
 
     if (snap.empty) {
       // Transaction already verified or doesn't exist
@@ -78,9 +59,9 @@ export async function POST(req: NextRequest) {
     const txData = txDoc.data();
 
     // 4. Update to verified
-    await updateDoc(txDoc.ref, {
+    await txDoc.ref.update({
       status: "verified",
-      updatedAt: Timestamp.now(),
+      updatedAt: FieldValue.serverTimestamp(),
       receiptEmailSent: true,
     });
 

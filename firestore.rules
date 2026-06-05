@@ -81,12 +81,9 @@ service cloud.firestore {
     // USER-WRITABLE COLLECTIONS (form submissions)
     // ──────────────────────────────────────────────
 
-    // Subscribers — anyone can create, get by ID, and update. Only admin can list/delete
+    // Subscribers — admin only. (Public API route uses Admin SDK)
     match /subscribers/{subscriberId} {
-      allow get: if true;
-      allow list: if isAdmin();
-      allow create, update: if true;
-      allow delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     // Contact Messages — anyone can create, admin reads/manages
@@ -116,17 +113,15 @@ service cloud.firestore {
     // ADMIN COLLECTIONS
     // ──────────────────────────────────────────────
 
-    // Admin Settings — any user (and unauthenticated API) can read to get config
-    // Only admin can write
+    // Admin Settings — admin only
     match /admin_settings/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
-    // Admin 2FA codes — accessible by the specific admin UID
-    // Also allow server-side writes (API routes run as service account)
+    // Admin 2FA codes — completely disabled for clients.
+    // Server uses Admin SDK to bypass rules.
     match /admin_2fa/{uid} {
-      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if false;
     }
 
     // Admin Users — admin only

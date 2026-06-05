@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore, collection, setDoc, getDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
 import crypto from "crypto";
-
-const cfg = { apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY, authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID };
-const app = getApps().length ? getApps()[0] : initializeApp(cfg);
-const db = getFirestore(app);
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,15 +13,15 @@ export async function POST(req: NextRequest) {
 
     try {
       const emailDocId = email.toLowerCase();
-      const subscriberRef = doc(db, "subscribers", emailDocId);
-      const snap = await getDoc(subscriberRef);
+      const subscriberRef = adminDb.collection("subscribers").doc(emailDocId);
+      const snap = await subscriberRef.get();
 
-      if (snap.exists()) {
+      if (snap.exists) {
         const data = snap.data();
-        if (data.isActive) return NextResponse.json({ success: false, message: "Already subscribed!" });
-        await updateDoc(subscriberRef, { isActive: true, name, reactivatedAt: Timestamp.now() });
+        if (data?.isActive) return NextResponse.json({ success: false, message: "Already subscribed!" });
+        await subscriberRef.update({ isActive: true, name, reactivatedAt: FieldValue.serverTimestamp() });
       } else {
-        await setDoc(subscriberRef, { name, email, source: source || "website", isActive: true, unsubscribeToken: token, createdAt: Timestamp.now() });
+        await subscriberRef.set({ name, email, source: source || "website", isActive: true, unsubscribeToken: token, createdAt: FieldValue.serverTimestamp() });
       }
     } catch (dbError) {
       console.error("Firestore write failed:", dbError);

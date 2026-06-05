@@ -73,3 +73,9 @@ ui-debug.log
 
 # Cloudinary local cache
 .cloudinary/
+
+# mine
+holy-spirit-chapel-firebase-adminsdk.json
+# firestore.rules
+# database.rules.json
+notes.txt

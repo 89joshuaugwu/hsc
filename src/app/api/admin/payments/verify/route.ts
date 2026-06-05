@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore, doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
-
-const cfg = { apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY, authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID };
-const app = getApps().length ? getApps()[0] : initializeApp(cfg);
-const db = getFirestore(app);
 
 export async function POST(req: NextRequest) {
   try {
     const { transactionId } = await req.json();
     if (!transactionId) return NextResponse.json({ error: "Missing transactionId" }, { status: 400 });
 
-    const txRef = doc(db, "transactions", transactionId);
-    const txSnap = await getDoc(txRef);
-    if (!txSnap.exists()) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+    const txRef = adminDb.collection("transactions").doc(transactionId);
+    const txSnap = await txRef.get();
+    if (!txSnap.exists) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
 
-    const tx = txSnap.data();
-    await updateDoc(txRef, { status: "verified", adminVerifiedAt: Timestamp.now() });
+    const tx = txSnap.data()!;
+    await txRef.update({ status: "verified", adminVerifiedAt: FieldValue.serverTimestamp() });
 
     const amountNaira = (tx.amount / 100).toLocaleString("en-NG", { minimumFractionDigits: 2 });
 

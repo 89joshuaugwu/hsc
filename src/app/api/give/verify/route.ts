@@ -1,26 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  updateDoc,
-  Timestamp,
-} from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
 import { paymentReceiptEmail } from "@/lib/email-templates";
 import { formatNaira } from "@/lib/utils";
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db = getFirestore(app);
+
 
 /**
  * POST /api/give/verify
@@ -55,9 +40,9 @@ export async function POST(req: NextRequest) {
 
     if (!paystackData.status || paystackData.data?.status !== "success") {
       // Update Firestore as failed
-      await updateDoc(doc(db, "transactions", transactionId), {
+      await adminDb.collection("transactions").doc(transactionId).update({
         status: "failed",
-        updatedAt: Timestamp.now(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return NextResponse.json(
         { error: "Payment verification failed", details: paystackData.message },
@@ -66,22 +51,22 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Update Firestore transaction as verified
-    const txRef = doc(db, "transactions", transactionId);
-    const txSnap = await getDoc(txRef);
+    const txRef = adminDb.collection("transactions").doc(transactionId);
+    const txSnap = await txRef.get();
 
-    if (!txSnap.exists()) {
+    if (!txSnap.exists) {
       return NextResponse.json(
         { error: "Transaction not found" },
         { status: 404 }
       );
     }
 
-    const txData = txSnap.data();
+    const txData = txSnap.data()!;
 
-    await updateDoc(txRef, {
+    await txRef.update({
       status: "verified",
       paystackReference: reference,
-      updatedAt: Timestamp.now(),
+      updatedAt: FieldValue.serverTimestamp(),
       receiptEmailSent: true,
     });
 

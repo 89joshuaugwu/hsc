@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/nodemailer";
-import crypto from "crypto";
+import { adminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,11 +11,13 @@ export async function POST(req: NextRequest) {
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = Date.now() + 10 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     
-    const secret = process.env.ADMIN_SECRET || "fallback_secret_123";
-    const hash = crypto.createHmac("sha256", secret).update(code).digest("hex");
-    const cookieValue = `${hash}.${expiresAt}`;
+    await adminDb.collection("admin_2fa").doc(uid).set({
+      code,
+      expiresAt,
+      used: false,
+    });
 
     await sendEmail({
       to: email,
@@ -32,16 +34,7 @@ export async function POST(req: NextRequest) {
       `,
     });
 
-    const response = NextResponse.json({ success: true });
-    response.cookies.set("2fa_hash", cookieValue, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 10 * 60, // 10 minutes
-      path: "/",
-    });
-
-    return response;
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Send 2FA error:", error);
     return NextResponse.json({ error: "Failed to send code" }, { status: 500 });
