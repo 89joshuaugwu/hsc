@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFirestore, collection, addDoc, query, where, getDocs, updateDoc, doc, Timestamp } from "firebase/firestore";
+import { getFirestore, collection, setDoc, getDoc, updateDoc, doc, Timestamp } from "firebase/firestore";
 import { initializeApp, getApps } from "firebase/app";
 import { sendEmail } from "@/lib/nodemailer";
 import crypto from "crypto";
@@ -16,16 +16,16 @@ export async function POST(req: NextRequest) {
     const token = crypto.randomBytes(32).toString("hex");
 
     try {
-      const q = query(collection(db, "subscribers"), where("email", "==", email));
-      const snap = await getDocs(q);
+      const emailDocId = email.toLowerCase();
+      const subscriberRef = doc(db, "subscribers", emailDocId);
+      const snap = await getDoc(subscriberRef);
 
-      if (!snap.empty) {
-        const existing = snap.docs[0];
-        const data = existing.data();
+      if (snap.exists()) {
+        const data = snap.data();
         if (data.isActive) return NextResponse.json({ success: false, message: "Already subscribed!" });
-        await updateDoc(doc(db, "subscribers", existing.id), { isActive: true, name, reactivatedAt: Timestamp.now() });
+        await updateDoc(subscriberRef, { isActive: true, name, reactivatedAt: Timestamp.now() });
       } else {
-        await addDoc(collection(db, "subscribers"), { name, email, source: source || "website", isActive: true, unsubscribeToken: token, createdAt: Timestamp.now() });
+        await setDoc(subscriberRef, { name, email, source: source || "website", isActive: true, unsubscribeToken: token, createdAt: Timestamp.now() });
       }
     } catch (dbError) {
       console.error("Firestore write failed:", dbError);
