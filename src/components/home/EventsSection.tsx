@@ -14,7 +14,7 @@ interface EventItem {
   title: string;
   description: string;
   category: string;
-  startDate: { toDate: () => Date };
+  startDate?: { toDate: () => Date };
   location: string;
   coverImageUrl: string;
   isFeatured: boolean;
@@ -31,8 +31,7 @@ export function EventsSection() {
         const q = query(
           collection(db, "events"),
           where("isActive", "==", true),
-          where("startDate", ">=", Timestamp.now()),
-          orderBy("startDate", "asc"),
+          orderBy("createdAt", "desc"),
           limit(4)
         );
         const snap = await getDocs(q);
@@ -98,12 +97,20 @@ export function EventsSection() {
                       <div className="flex gap-4 items-end w-full">
                         {/* Date badge */}
                         <div className="flex-shrink-0 w-16 h-16 bg-white rounded-xl flex flex-col items-center justify-center">
-                          <span className="font-body text-[0.6rem] font-bold text-chapel-400 uppercase">
-                            {formatDate(featured.startDate.toDate()).month}
-                          </span>
-                          <span className="font-heading text-xl font-bold text-navy-500 -mt-0.5">
-                            {formatDate(featured.startDate.toDate()).day}
-                          </span>
+                          {featured.startDate ? (
+                            <>
+                              <span className="font-body text-[0.6rem] font-bold text-chapel-400 uppercase">
+                                {formatDate(featured.startDate.toDate()).month}
+                              </span>
+                              <span className="font-heading text-xl font-bold text-navy-500 -mt-0.5">
+                                {formatDate(featured.startDate.toDate()).day}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="font-body text-[0.6rem] font-bold text-chapel-400 uppercase text-center px-1">
+                              TBA
+                            </span>
+                          )}
                         </div>
                         <div className="flex-1">
                           <h3 className="font-heading text-xl md:text-2xl font-bold text-white mb-1">
@@ -118,10 +125,12 @@ export function EventsSection() {
                             )}
                             <span className="inline-flex items-center gap-1 font-body text-xs">
                               <Clock size={12} />
-                              {featured.startDate.toDate().toLocaleTimeString("en-NG", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {featured.startDate
+                                ? featured.startDate.toDate().toLocaleTimeString("en-NG", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "TBA"}
                             </span>
                           </div>
                         </div>
@@ -142,7 +151,7 @@ export function EventsSection() {
               {rest.length > 0 && (
                 <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible scrollbar-hide">
                   {rest.map((evt) => {
-                    const d = formatDate(evt.startDate.toDate());
+                    const d = evt.startDate ? formatDate(evt.startDate.toDate()) : null;
                     return (
                       <motion.div key={evt.id} variants={fadeUp} className="min-w-[260px] md:min-w-0 flex-shrink-0">
                         <div className="bg-ivory rounded-xl border border-border/60 overflow-hidden hover:shadow-chapel transition-all group">
@@ -159,12 +168,20 @@ export function EventsSection() {
                             )}
                             {/* Date badge */}
                             <div className="absolute top-3 left-3 w-12 h-14 bg-navy-500 rounded-lg flex flex-col items-center justify-center">
-                              <span className="font-body text-[0.55rem] font-bold text-gold-500 uppercase">
-                                {d.month}
-                              </span>
-                              <span className="font-heading text-lg font-bold text-white -mt-0.5">
-                                {d.day}
-                              </span>
+                              {d ? (
+                                <>
+                                  <span className="font-body text-[0.55rem] font-bold text-gold-500 uppercase">
+                                    {d.month}
+                                  </span>
+                                  <span className="font-heading text-lg font-bold text-white -mt-0.5">
+                                    {d.day}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="font-body text-[0.55rem] font-bold text-gold-500 uppercase text-center px-1">
+                                  TBA
+                                </span>
+                              )}
                             </div>
                             {/* Category */}
                             <span className="absolute top-3 right-3 px-2.5 py-0.5 bg-white/90 backdrop-blur-sm text-navy-500 font-body text-[0.6rem] font-bold rounded-full">
@@ -178,10 +195,12 @@ export function EventsSection() {
                             <div className="flex items-center gap-3 text-text-muted">
                               <span className="inline-flex items-center gap-1 font-body text-xs">
                                 <Clock size={12} />
-                                {evt.startDate.toDate().toLocaleTimeString("en-NG", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                                {evt.startDate
+                                  ? evt.startDate.toDate().toLocaleTimeString("en-NG", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : "TBA"}
                               </span>
                               {evt.location && (
                                 <span className="inline-flex items-center gap-1 font-body text-xs truncate">

@@ -25,7 +25,6 @@ export function GalleryTeaser() {
       try {
         const q = query(
           collection(db, "gallery"),
-          where("isActive", "==", true),
           orderBy("uploadedAt", "desc"),
           limit(6)
         );

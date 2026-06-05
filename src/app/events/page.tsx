@@ -22,7 +22,7 @@ interface EventItem {
   title: string;
   description: string;
   category: string;
-  startDate: { toDate: () => Date };
+  startDate?: { toDate: () => Date };
   endDate?: { toDate: () => Date };
   location: string;
   coverImageUrl: string;
@@ -52,7 +52,7 @@ export default function EventsPage() {
         const q = query(
           collection(db, "events"),
           where("isActive", "==", true),
-          orderBy("startDate", "asc")
+          orderBy("createdAt", "desc")
         );
         const snap = await getDocs(q);
         setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as EventItem));
@@ -68,7 +68,7 @@ export default function EventsPage() {
   const filtered =
     activeCategory === "All Events"
       ? events
-      : events.filter((e) => e.category === activeCategory);
+      : events.filter((e) => e.category?.toLowerCase() === activeCategory.toLowerCase());
 
   const featured = filtered.find((e) => e.isFeatured);
   const regular = filtered.filter((e) => e.id !== featured?.id);
@@ -186,14 +186,23 @@ export default function EventsPage() {
                         {featured.description}
                       </p>
                       <div className="flex flex-wrap gap-4 text-white/60 mb-6">
-                        <span className="inline-flex items-center gap-1 font-body text-sm">
-                          <Calendar size={14} />
-                          {formatDate(featured.startDate.toDate()).full}
-                        </span>
-                        <span className="inline-flex items-center gap-1 font-body text-sm">
-                          <Clock size={14} />
-                          {formatDate(featured.startDate.toDate()).time}
-                        </span>
+                        {featured.startDate ? (
+                          <>
+                            <span className="inline-flex items-center gap-1 font-body text-sm">
+                              <Calendar size={14} />
+                              {formatDate(featured.startDate.toDate()).full}
+                            </span>
+                            <span className="inline-flex items-center gap-1 font-body text-sm">
+                              <Clock size={14} />
+                              {formatDate(featured.startDate.toDate()).time}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 font-body text-sm">
+                            <Calendar size={14} />
+                            Date TBA
+                          </span>
+                        )}
                         {featured.location && (
                           <span className="inline-flex items-center gap-1 font-body text-sm">
                             <MapPin size={14} />
@@ -251,7 +260,7 @@ export default function EventsPage() {
               {viewMode === "grid" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {visible.map((evt) => {
-                    const d = formatDate(evt.startDate.toDate());
+                    const d = evt.startDate ? formatDate(evt.startDate.toDate()) : null;
                     return (
                       <motion.div key={evt.id} variants={fadeUp}>
                         <div className="bg-white rounded-xl border border-border/60 overflow-hidden hover:shadow-chapel transition-all group">
@@ -262,8 +271,14 @@ export default function EventsPage() {
                               <div className="absolute inset-0 bg-gradient-to-br from-chapel-300 to-chapel-500" />
                             )}
                             <div className="absolute top-3 left-3 w-12 h-14 bg-navy-500 rounded-lg flex flex-col items-center justify-center">
-                              <span className="font-body text-[0.55rem] font-bold text-gold-500">{d.month}</span>
-                              <span className="font-heading text-lg font-bold text-white -mt-0.5">{d.day}</span>
+                              {d ? (
+                                <>
+                                  <span className="font-body text-[0.55rem] font-bold text-gold-500">{d.month}</span>
+                                  <span className="font-heading text-lg font-bold text-white -mt-0.5">{d.day}</span>
+                                </>
+                              ) : (
+                                <span className="font-body text-[0.55rem] font-bold text-gold-500 text-center px-1">TBA</span>
+                              )}
                             </div>
                             <span className="absolute top-3 right-3 px-2.5 py-0.5 bg-white/90 backdrop-blur-sm text-navy-500 font-body text-[0.6rem] font-bold rounded-full">
                               {evt.category || "Event"}
@@ -272,7 +287,10 @@ export default function EventsPage() {
                           <div className="p-4 space-y-2">
                             <h3 className="font-heading text-base font-bold text-navy-500 line-clamp-1">{evt.title}</h3>
                             <div className="flex items-center gap-3 text-text-muted">
-                              <span className="inline-flex items-center gap-1 font-body text-xs"><Clock size={12} />{d.time}</span>
+                              <span className="inline-flex items-center gap-1 font-body text-xs">
+                                <Clock size={12} />
+                                {d ? d.time : "TBA"}
+                              </span>
                               {evt.location && <span className="inline-flex items-center gap-1 font-body text-xs truncate"><MapPin size={12} />{evt.location}</span>}
                             </div>
                             <span className="inline-flex items-center gap-1 font-body text-xs font-semibold text-chapel-400">Details <ArrowRight size={12} /></span>
@@ -288,18 +306,27 @@ export default function EventsPage() {
               {viewMode === "list" && (
                 <div className="space-y-3">
                   {visible.map((evt) => {
-                    const d = formatDate(evt.startDate.toDate());
+                    const d = evt.startDate ? formatDate(evt.startDate.toDate()) : null;
                     return (
                       <motion.div key={evt.id} variants={fadeUp}>
                         <div className="flex items-center gap-4 bg-white rounded-xl border border-border/60 p-4 hover:shadow-chapel transition-all">
                           <div className="w-14 h-16 bg-navy-500 rounded-lg flex flex-col items-center justify-center flex-shrink-0">
-                            <span className="font-body text-[0.55rem] font-bold text-gold-500">{d.month}</span>
-                            <span className="font-heading text-lg font-bold text-white -mt-0.5">{d.day}</span>
+                            {d ? (
+                              <>
+                                <span className="font-body text-[0.55rem] font-bold text-gold-500">{d.month}</span>
+                                <span className="font-heading text-lg font-bold text-white -mt-0.5">{d.day}</span>
+                              </>
+                            ) : (
+                              <span className="font-body text-[0.55rem] font-bold text-gold-500 text-center px-1">TBA</span>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-heading text-sm font-bold text-navy-500 truncate">{evt.title}</h3>
                             <div className="flex items-center gap-3 text-text-muted mt-1">
-                              <span className="inline-flex items-center gap-1 font-body text-xs"><Clock size={12} />{d.time}</span>
+                              <span className="inline-flex items-center gap-1 font-body text-xs">
+                                <Clock size={12} />
+                                {d ? d.time : "TBA"}
+                              </span>
                               {evt.location && <span className="inline-flex items-center gap-1 font-body text-xs truncate"><MapPin size={12} />{evt.location}</span>}
                               <span className="px-2 py-0.5 bg-chapel-400/10 text-chapel-400 font-body text-[0.6rem] font-bold rounded-full">{evt.category || "Event"}</span>
                             </div>

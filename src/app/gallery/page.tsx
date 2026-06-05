@@ -33,7 +33,7 @@ export default function GalleryPage() {
   useEffect(() => {
     (async () => {
       try {
-        const q = query(collection(db, "gallery"), where("isActive", "==", true), orderBy("uploadedAt", "desc"));
+        const q = query(collection(db, "gallery"), orderBy("uploadedAt", "desc"));
         const s = await getDocs(q);
         setItems(s.docs.map((d) => ({ id: d.id, ...d.data() }) as GalleryItem));
       } catch (e) { console.error("Gallery:", e); }
@@ -41,7 +41,7 @@ export default function GalleryPage() {
     })();
   }, []);
 
-  const filtered = cat === "All" ? items : items.filter((i) => i.category === cat);
+  const filtered = cat === "All" ? items : items.filter((i) => i.category?.toLowerCase() === cat.toLowerCase());
 
   const onKey = useCallback((e: KeyboardEvent) => {
     if (lb === null) return;
