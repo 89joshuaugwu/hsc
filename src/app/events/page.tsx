@@ -43,8 +43,6 @@ export default function EventsPage() {
 
   const heroRef = useRef(null);
   const heroInView = useInView(heroRef, { once: true });
-  const gridRef = useRef(null);
-  const gridInView = useInView(gridRef, { once: true, margin: "-50px" });
 
   useEffect(() => {
     async function fetch() {
@@ -159,10 +157,10 @@ export default function EventsPage() {
             </div>
           ) : (
             <motion.div
-              ref={gridRef}
               variants={stagger(0.1)}
               initial="hidden"
-              animate={gridInView ? "visible" : "hidden"}
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
               className="space-y-10"
             >
               {/* Featured event */}

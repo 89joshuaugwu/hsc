@@ -27,8 +27,6 @@ export default function GalleryPage() {
   const [lb, setLb] = useState<number | null>(null);
   const heroRef = useRef(null);
   const heroIn = useInView(heroRef, { once: true });
-  const gridRef = useRef(null);
-  const gridIn = useInView(gridRef, { once: true, margin: "-50px" });
 
   useEffect(() => {
     (async () => {
@@ -77,7 +75,7 @@ export default function GalleryPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-20"><p className="font-body text-sm text-text-muted">No photos in this category yet.</p></div>
           ) : (
-            <motion.div ref={gridRef} variants={stagger(0.04)} initial="hidden" animate={gridIn ? "visible" : "hidden"} className="columns-2 md:columns-3 lg:columns-4 gap-3">
+            <motion.div variants={stagger(0.04)} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} className="columns-2 md:columns-3 lg:columns-4 gap-3">
               {filtered.map((item, idx) => (
                 <motion.div key={item.id} variants={fadeUp} className="break-inside-avoid mb-3 rounded-xl overflow-hidden cursor-pointer group" onClick={() => setLb(idx)}>
                   <Image src={item.imageUrl} alt={item.caption || "Photo"} width={item.width || 400} height={item.height || 300} className="w-full h-auto transition-all duration-500 group-hover:brightness-110 group-hover:scale-[1.03]" sizes="(max-width:768px) 50vw, 25vw" />
