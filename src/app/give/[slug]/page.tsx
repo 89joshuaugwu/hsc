@@ -149,23 +149,7 @@ export default function GiveSlugPage() {
       if (!initRes.ok) throw new Error(initData.error);
 
       const txId = initData.transactionId;
-      const reference = `hsc_${txId}_${Date.now()}`;
-
-      // Update transaction with reference
-      await fetch("/api/give/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          giveOptionId: option.id,
-          giveOptionTitle: option.title,
-          donorName: name.trim(),
-          donorEmail: email.trim(),
-          donorPhone: phone.trim(),
-          amount: Number(amount),
-          method: "paystack",
-          paystackReference: reference,
-        }),
-      });
+      const reference = initData.paystackReference;
 
       // 2. Open Paystack popup
       const PaystackPop = (await import("@paystack/inline-js")).default;

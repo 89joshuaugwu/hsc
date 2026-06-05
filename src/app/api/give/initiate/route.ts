@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  Timestamp,
-} from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 
-/* ── Ensure Firebase is initialized server-side ── */
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 /**
  * POST /api/give/initiate
@@ -39,7 +23,6 @@ export async function POST(req: NextRequest) {
       donorPhone,
       amount,
       method,
-      paystackReference,
       screenshotUrl,
       screenshotPublicId,
     } = body;
@@ -66,9 +49,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const now = Timestamp.now();
+    const docRef = adminDb.collection("transactions").doc();
+    const generatedReference = method === "paystack" ? `hsc_${docRef.id}_${Date.now()}` : null;
 
-    const docRef = await addDoc(collection(db, "transactions"), {
+    await docRef.set({
       giveOptionId,
       giveOptionTitle: giveOptionTitle || "",
       donorName,
@@ -77,17 +61,18 @@ export async function POST(req: NextRequest) {
       amount: Number(amount), // stored in naira
       method,
       status: "pending",
-      paystackReference: paystackReference || null,
+      paystackReference: generatedReference,
       screenshotUrl: screenshotUrl || null,
       screenshotPublicId: screenshotPublicId || null,
       receiptEmailSent: false,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({
       success: true,
       transactionId: docRef.id,
+      paystackReference: generatedReference,
     });
   } catch (error) {
     console.error("Give initiate error:", error);
