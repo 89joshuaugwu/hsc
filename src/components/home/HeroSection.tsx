@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { LiveBadge } from "@/components/layout/LiveBadge";
@@ -50,7 +50,8 @@ const PARTICLES = generateParticles(16);
  * radial glow, and staggered Framer Motion text entrance.
  */
 export function HeroSection() {
-  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
+  const [heroImages, setHeroImages] = useState<Array<{url: string, publicId: string, order: number}>>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [tagline, setTagline] = useState(
     "A vibrant Anglican community of faith, worship, and fellowship at Enugu State University of Technology."
   );
@@ -62,7 +63,11 @@ export function HeroSection() {
         const snap = await getDoc(doc(db, "chapel_info", "main"));
         if (snap.exists()) {
           const data = snap.data();
-          if (data.heroImageUrl) setHeroImageUrl(data.heroImageUrl);
+          if (data.heroImages && data.heroImages.length > 0) {
+            setHeroImages(data.heroImages.sort((a: any, b: any) => a.order - b.order));
+          } else if (data.heroImageUrl) {
+            setHeroImages([{ url: data.heroImageUrl, publicId: "", order: 0 }]);
+          }
           if (data.tagline) setTagline(data.tagline);
         }
       } catch (error) {
@@ -72,27 +77,75 @@ export function HeroSection() {
     fetchHeroData();
   }, []);
 
+  /* ── Slideshow Logic ── */
+  useEffect(() => {
+    if (heroImages.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % heroImages.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index);
+  };
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length);
+  };
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % heroImages.length);
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* ── Background: Image or Gradient ── */}
-      <div className="absolute inset-0 z-0">
-        {heroImageUrl ? (
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${heroImageUrl})` }}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-chapel-gradient" />
-        )}
+      <div className="absolute inset-0 z-0 bg-chapel-gradient overflow-hidden group/hero">
+        <AnimatePresence mode="wait">
+          {heroImages.length > 0 && (
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 1.2, ease: "easeInOut" } }}
+              exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
+              className="absolute inset-0"
+            >
+              <div
+                className={cn(
+                  "absolute inset-0 bg-cover bg-center bg-no-repeat",
+                  heroImages.length > 1 ? "hero-slide-active" : ""
+                )}
+                style={{ backgroundImage: `url(${heroImages[currentIndex].url})` }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Hero overlay gradient */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-10"
           style={{
             background:
               "linear-gradient(to bottom, rgba(10,45,82,0.7) 0%, rgba(10,45,82,0.4) 50%, rgba(10,45,82,0.8) 100%)",
           }}
         />
+
+        {/* Slide Navigation Arrows */}
+        {heroImages.length > 1 && (
+          <>
+            <button
+              onClick={prevSlide}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 opacity-0 group-hover/hero:opacity-100 transition-opacity hidden md:block"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 opacity-0 group-hover/hero:opacity-100 transition-opacity hidden md:block"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* ── Radial Glow (top center) ── */}
@@ -239,6 +292,25 @@ export function HeroSection() {
           </Link>
         </motion.div>
       </motion.div>
+
+      {/* ── Slide Indicators ── */}
+      {heroImages.length > 1 && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+          {heroImages.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => goToSlide(idx)}
+              className="relative p-1 flex items-center justify-center"
+            >
+              {currentIndex === idx ? (
+                <motion.div layoutId="hero-dot" className="w-6 h-2 rounded-full bg-white" />
+              ) : (
+                <div className="w-2 h-2 rounded-full bg-white/40 hover:bg-white/60 transition-colors" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Scroll Indicator ── */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">

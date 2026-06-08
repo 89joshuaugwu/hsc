@@ -153,6 +153,22 @@
   100% { transform: scale(2); opacity: 0; }
 }
 
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes kenBurns {
+  0%   { transform: scale(1.0) translateX(0px); }
+  50%  { transform: scale(1.08) translateX(-12px); }
+  100% { transform: scale(1.0) translateX(0px); }
+}
+
+.hero-slide-active {
+  animation: kenBurns 7s ease-in-out forwards;
+}
+
 @keyframes ticker {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }

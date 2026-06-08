@@ -14,10 +14,13 @@ import {
   Church,
   Mail,
   Loader2,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ImageUpload } from "@/components/admin/upload/ImageUpload";
+import { GalleryUpload } from "@/components/admin/upload/GalleryUpload";
+import Image from "next/image";
 
 /* ─── Types ─── */
 interface SettingsForm {
@@ -33,8 +36,7 @@ interface SettingsForm {
     whatsapp: string;
   };
   serviceTimes: { label: string; day: string; time: string }[];
-  heroImageUrl: string;
-  heroImagePublicId: string;
+  heroImages: { url: string; publicId: string; order: number }[];
   missionStatement: string;
   visionStatement: string;
   scriptureVerse: string;
@@ -65,8 +67,7 @@ export default function AdminSettingsPage() {
       email: "",
       socials: { facebook: "", instagram: "", twitter: "", whatsapp: "" },
       serviceTimes: [{ label: "", day: "", time: "" }],
-      heroImageUrl: "",
-      heroImagePublicId: "",
+      heroImages: [],
       missionStatement: "",
       visionStatement: "",
       scriptureVerse: "",
@@ -78,6 +79,8 @@ export default function AdminSettingsPage() {
     useFieldArray({ control: chapelForm.control, name: "phones" });
   const { fields: stFields, append: addServiceTime, remove: removeServiceTime } =
     useFieldArray({ control: chapelForm.control, name: "serviceTimes" });
+  const { fields: heroImageFields, append: addHeroImage, remove: removeHeroImage, swap: swapHeroImage } =
+    useFieldArray({ control: chapelForm.control, name: "heroImages" });
 
   // Email form
   const emailForm = useForm<EmailConfigForm>({
@@ -107,8 +110,7 @@ export default function AdminSettingsPage() {
             email: d.email || "",
             socials: d.socials || { facebook: "", instagram: "", twitter: "", whatsapp: "" },
             serviceTimes: d.serviceTimes || [{ label: "", day: "", time: "" }],
-            heroImageUrl: d.heroImageUrl || "",
-            heroImagePublicId: d.heroImagePublicId || "",
+            heroImages: d.heroImages || (d.heroImageUrl ? [{ url: d.heroImageUrl, publicId: d.heroImagePublicId || "", order: 0 }] : []),
             missionStatement: d.missionStatement || "",
             visionStatement: d.visionStatement || "",
             scriptureVerse: d.scriptureVerse || "",
@@ -153,8 +155,7 @@ export default function AdminSettingsPage() {
           email: data.email,
           socials: data.socials,
           serviceTimes: data.serviceTimes,
-          heroImageUrl: data.heroImageUrl,
-          heroImagePublicId: data.heroImagePublicId || null,
+          heroImages: data.heroImages.map((img, i) => ({ ...img, order: i })),
           missionStatement: data.missionStatement,
           visionStatement: data.visionStatement,
           scriptureVerse: data.scriptureVerse,
@@ -354,21 +355,44 @@ export default function AdminSettingsPage() {
             </button>
           </div>
 
-          {/* Hero Image URL */}
+          {/* Hero Images */}
           <div>
-            <ImageUpload
-              label="Hero Image"
-              hint="Recommended: 1920×1080px, JPG or WEBP"
-              value={chapelForm.watch("heroImageUrl")}
-              onChange={(url, publicId) => {
-                chapelForm.setValue("heroImageUrl", url, { shouldDirty: true });
-                chapelForm.setValue("heroImagePublicId", publicId, { shouldDirty: true });
-              }}
-              onRemove={() => {
-                chapelForm.setValue("heroImageUrl", "", { shouldDirty: true });
-                chapelForm.setValue("heroImagePublicId", "", { shouldDirty: true });
-              }}
-            />
+            <label className="block font-body text-xs font-semibold text-text-muted mb-2">Hero Images (Max 5)</label>
+            <div className="space-y-3">
+              {heroImageFields.map((field, idx) => (
+                <div key={field.id} className="flex items-center gap-3 bg-ivory/50 border border-border/40 p-2 rounded-lg">
+                  <div className="relative w-24 h-14 bg-ivory-dark rounded overflow-hidden">
+                    <Image src={chapelForm.watch(`heroImages.${idx}.url`)} alt={`Hero ${idx + 1}`} fill className="object-cover" />
+                  </div>
+                  <div className="flex-1 font-body text-xs text-text-muted font-semibold">Slide {idx + 1}</div>
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => swapHeroImage(idx, idx - 1)} disabled={idx === 0} className="p-1.5 rounded bg-white text-text-muted hover:text-chapel-400 disabled:opacity-30"><ArrowUp size={14}/></button>
+                    <button type="button" onClick={() => swapHeroImage(idx, idx + 1)} disabled={idx === heroImageFields.length - 1} className="p-1.5 rounded bg-white text-text-muted hover:text-chapel-400 disabled:opacity-30"><ArrowDown size={14}/></button>
+                    <button type="button" onClick={() => {
+                      const publicId = chapelForm.getValues(`heroImages.${idx}.publicId`);
+                      if (publicId) fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId }) });
+                      removeHeroImage(idx);
+                    }} className="p-1.5 rounded bg-white text-red-400 hover:text-red-600 ml-2"><Trash2 size={14}/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {heroImageFields.length < 5 && (
+              <div className="mt-4">
+                <GalleryUpload 
+                  onUploadComplete={(items) => {
+                    const remaining = 5 - heroImageFields.length;
+                    items.slice(0, remaining).forEach(item => {
+                      addHeroImage({ url: item.url, publicId: item.publicId, order: 0 });
+                    });
+                  }} 
+                />
+              </div>
+            )}
+            {heroImageFields.length === 0 && (
+              <p className="font-body text-xs text-red-500 mt-2">At least 1 hero image is required.</p>
+            )}
           </div>
 
           {/* Mission / Vision */}
