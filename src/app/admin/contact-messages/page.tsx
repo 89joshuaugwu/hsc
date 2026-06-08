@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Trash2, Mail, MailOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,15 +14,17 @@ export default function AdminContactMessagesPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const fetchAll = async () => {
-    try {
-      const q = query(collection(db, "contact_messages"), orderBy("createdAt", "desc"));
-      const snap = await getDocs(q);
+  useEffect(() => {
+    const q = query(collection(db, "contact_messages"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
       setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Msg));
-    } catch (e) { console.error(e); } finally { setLoading(false); }
-  };
-
-  useEffect(() => { fetchAll(); }, []);
+      setLoading(false);
+    }, (error) => {
+      console.error(error);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   const handleExpand = async (id: string) => {
     if (expanded === id) { setExpanded(null); return; }

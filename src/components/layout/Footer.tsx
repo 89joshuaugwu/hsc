@@ -6,6 +6,7 @@ import Image from "next/image";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FooterSubscribe } from "@/components/ui/FooterSubscribe";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
 import type { ChapelInfo, ServiceTime } from "@/types/chapel.types";
 
@@ -89,6 +90,7 @@ interface SocialLink {
 export function Footer() {
   const [serviceTimes, setServiceTimes] = useState<ServiceTime[]>(defaultServiceTimes);
   const [socials, setSocials] = useState<SocialLink[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   /* ── Fetch chapel info from Firestore ── */
   useEffect(() => {
@@ -122,6 +124,8 @@ export function Footer() {
         }
       } catch (error) {
         console.error("Failed to fetch chapel info:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchChapelInfo();
@@ -210,18 +214,25 @@ export function Footer() {
             <h4 className="font-heading text-base text-white font-bold mb-5">
               Service Times
             </h4>
-            <ul className="space-y-4">
-              {serviceTimes.map((service, idx) => (
-                <li key={idx} className="space-y-0.5">
-                  <p className="font-body text-sm font-semibold text-white/80">
-                    {service.label}
-                  </p>
-                  <p className="font-body text-xs text-white/50">
-                    {service.day} · {service.time}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="w-full h-10 bg-white/10" />
+                <Skeleton className="w-full h-10 bg-white/10" />
+              </div>
+            ) : (
+              <ul className="space-y-4 transition-opacity duration-500">
+                {serviceTimes.map((service, idx) => (
+                  <li key={idx} className="space-y-0.5">
+                    <p className="font-body text-sm font-semibold text-white/80">
+                      {service.label}
+                    </p>
+                    <p className="font-body text-xs text-white/50">
+                      {service.day} · {service.time}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* ── Column 4: Subscribe ── */}

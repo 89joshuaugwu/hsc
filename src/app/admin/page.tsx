@@ -7,6 +7,7 @@ import {
   query,
   where,
   getDocs,
+  onSnapshot,
   doc,
   getDoc,
   updateDoc,
@@ -43,7 +44,14 @@ interface StatCardData {
  * Admin Dashboard Home — Stat cards, quick actions, recent activity.
  */
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState<StatCardData[]>([]);
+  const [counts, setCounts] = useState({
+    subscribers: 0,
+    pendingPayments: 0,
+    events: 0,
+    messages: 0,
+    gallery: 0,
+    departments: 0,
+  });
   const [recentMessages, setRecentMessages] = useState<{ id: string; name: string; subject: string; date: string }[]>([]);
   const [recentPayments, setRecentPayments] = useState<{ id: string; name: string; amount: number; status: string; date: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,74 +59,59 @@ export default function AdminDashboardPage() {
   const [togglingLive, setTogglingLive] = useState(false);
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        const [subsSnap, pendingSnap, eventsSnap, msgsSnap, gallerySnap, deptsSnap] =
-          await Promise.all([
-            getDocs(query(collection(db, "subscribers"), where("isActive", "==", true))),
-            getDocs(query(collection(db, "transactions"), where("status", "==", "pending"))),
-            getDocs(
-              query(
-                collection(db, "events"),
-                where("isActive", "==", true),
-                where("startDate", ">=", Timestamp.fromDate(startOfMonth))
-              )
-            ),
-            getDocs(query(collection(db, "contact_messages"), where("isRead", "==", false))),
-            getDocs(query(collection(db, "gallery"), where("isActive", "==", true))),
-            getDocs(query(collection(db, "departments"), where("isActive", "==", true))),
-          ]);
+    const unsubSubs = onSnapshot(query(collection(db, "subscribers"), where("isActive", "==", true)), (snap) => setCounts(prev => ({ ...prev, subscribers: snap.size })));
+    const unsubPending = onSnapshot(query(collection(db, "transactions"), where("status", "==", "pending")), (snap) => setCounts(prev => ({ ...prev, pendingPayments: snap.size })));
+    const unsubEvents = onSnapshot(query(collection(db, "events"), where("isActive", "==", true), where("startDate", ">=", Timestamp.fromDate(startOfMonth))), (snap) => setCounts(prev => ({ ...prev, events: snap.size })));
+    const unsubMsgs = onSnapshot(query(collection(db, "contact_messages"), where("isRead", "==", false)), (snap) => setCounts(prev => ({ ...prev, messages: snap.size })));
+    const unsubGallery = onSnapshot(query(collection(db, "gallery"), where("isActive", "==", true)), (snap) => setCounts(prev => ({ ...prev, gallery: snap.size })));
+    const unsubDepts = onSnapshot(query(collection(db, "departments"), where("isActive", "==", true)), (snap) => setCounts(prev => ({ ...prev, departments: snap.size })));
 
-        setStats([
-          { label: "Subscribers", value: subsSnap.size, icon: UserCheck, color: "bg-chapel-400/10 text-chapel-400", href: "/admin/subscribers" },
-          { label: "Pending Payments", value: pendingSnap.size, icon: CreditCard, color: "bg-amber-500/10 text-amber-600", href: "/admin/payments" },
-          { label: "This Month Events", value: eventsSnap.size, icon: Calendar, color: "bg-green-500/10 text-green-600", href: "/admin/events" },
-          { label: "New Messages", value: msgsSnap.size, icon: Mail, color: "bg-blue-500/10 text-blue-600", href: "/admin/contact-messages" },
-          { label: "Gallery Photos", value: gallerySnap.size, icon: ImageIcon, color: "bg-purple-500/10 text-purple-600", href: "/admin/gallery" },
-          { label: "Departments", value: deptsSnap.size, icon: Users, color: "bg-gold-500/10 text-gold-600", href: "/admin/departments" },
-        ]);
+    const unsubRecentMsgs = onSnapshot(query(collection(db, "contact_messages"), orderBy("createdAt", "desc"), limit(5)), (snap) => {
+      setRecentMessages(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            name: data.name,
+            subject: data.subject,
+            date: data.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || "",
+          };
+        })
+      );
+    });
 
-        // Recent messages
-        const msgQ = query(collection(db, "contact_messages"), orderBy("createdAt", "desc"), limit(5));
-        const msgSnap = await getDocs(msgQ);
-        setRecentMessages(
-          msgSnap.docs.map((d) => {
-            const data = d.data();
-            return {
-              id: d.id,
-              name: data.name,
-              subject: data.subject,
-              date: data.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || "",
-            };
-          })
-        );
+    const unsubRecentPay = onSnapshot(query(collection(db, "transactions"), orderBy("createdAt", "desc"), limit(5)), (snap) => {
+      setRecentPayments(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            name: data.donorName,
+            amount: data.amount,
+            status: data.status,
+            date: data.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || "",
+          };
+        })
+      );
+      setLoading(false);
+    });
 
-        // Recent payments
-        const payQ = query(collection(db, "transactions"), orderBy("createdAt", "desc"), limit(5));
-        const paySnap = await getDocs(payQ);
-        setRecentPayments(
-          paySnap.docs.map((d) => {
-            const data = d.data();
-            return {
-              id: d.id,
-              name: data.donorName,
-              amount: data.amount,
-              status: data.status,
-              date: data.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || "",
-            };
-          })
-        );
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStats();
+    return () => {
+      unsubSubs(); unsubPending(); unsubEvents(); unsubMsgs(); unsubGallery(); unsubDepts(); unsubRecentMsgs(); unsubRecentPay();
+    };
   }, []);
+
+  const stats: StatCardData[] = [
+    { label: "Subscribers", value: counts.subscribers, icon: UserCheck, color: "bg-chapel-400/10 text-chapel-400", href: "/admin/subscribers" },
+    { label: "Pending Payments", value: counts.pendingPayments, icon: CreditCard, color: "bg-amber-500/10 text-amber-600", href: "/admin/payments" },
+    { label: "This Month Events", value: counts.events, icon: Calendar, color: "bg-green-500/10 text-green-600", href: "/admin/events" },
+    { label: "New Messages", value: counts.messages, icon: Mail, color: "bg-blue-500/10 text-blue-600", href: "/admin/contact-messages" },
+    { label: "Gallery Photos", value: counts.gallery, icon: ImageIcon, color: "bg-purple-500/10 text-purple-600", href: "/admin/gallery" },
+    { label: "Departments", value: counts.departments, icon: Users, color: "bg-gold-500/10 text-gold-600", href: "/admin/departments" },
+  ];
 
   const handleToggleLive = async () => {
     setTogglingLive(true);

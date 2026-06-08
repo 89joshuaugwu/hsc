@@ -8,6 +8,7 @@ import { motion, useInView } from "framer-motion";
 import { fadeUp, stagger } from "@/lib/motion";
 import { ArrowRight } from "lucide-react";
 import * as LucideIcons from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Music: LucideIcons.Music,
@@ -32,6 +33,7 @@ interface DeptMini {
 
 export function DepartmentsStrip() {
   const [departments, setDepartments] = useState<DeptMini[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -48,6 +50,8 @@ export function DepartmentsStrip() {
         setDepartments(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as DeptMini));
       } catch (err) {
         console.error("Departments fetch error:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetch();
@@ -76,8 +80,17 @@ export function DepartmentsStrip() {
           </motion.div>
 
           {/* Cards */}
-          {departments.length > 0 && (
-            <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible scrollbar-hide">
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-3 p-6 rounded-xl bg-white/5 border border-white/10">
+                  <Skeleton className="w-14 h-14 rounded-full bg-white/20" />
+                  <Skeleton className="w-20 h-4 rounded bg-white/20" />
+                </div>
+              ))}
+            </div>
+          ) : departments.length > 0 && (
+            <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible scrollbar-hide transition-opacity duration-500">
               {departments.map((dept) => {
                 const Icon = ICON_MAP[dept.icon] || LucideIcons.Users;
                 return (

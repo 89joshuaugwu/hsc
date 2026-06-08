@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { motion, useInView } from "framer-motion";
 import { fadeUp, stagger } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Announcement {
   id: string;
@@ -19,6 +20,7 @@ interface Announcement {
 
 export function AnnouncementsSection() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -35,6 +37,8 @@ export function AnnouncementsSection() {
         setAnnouncements(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Announcement));
       } catch (err) {
         console.error("Announcements fetch error:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetch();
@@ -76,14 +80,24 @@ export function AnnouncementsSection() {
             </h2>
           </motion.div>
 
-          {announcements.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-3">
+                <Skeleton className="w-full h-48 md:h-64" />
+              </div>
+              <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="w-full h-32" />
+                <Skeleton className="w-full h-32" />
+              </div>
+            </div>
+          ) : announcements.length === 0 ? (
             <motion.div variants={fadeUp} className="text-center py-12">
               <p className="font-body text-sm text-text-muted">
                 No announcements at this time. Check back soon!
               </p>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 transition-opacity duration-500">
               {/* Featured */}
               {featured && (
                 <motion.div variants={fadeUp} className="lg:col-span-3">

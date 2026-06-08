@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase";
 import { motion, useInView } from "framer-motion";
 import { fadeUp, stagger } from "@/lib/motion";
 import { MapPin, Clock, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface EventItem {
   id: string;
@@ -22,6 +23,7 @@ interface EventItem {
 
 export function EventsSection() {
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -38,6 +40,8 @@ export function EventsSection() {
         setEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as EventItem));
       } catch (err) {
         console.error("Events fetch error:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetch();
@@ -70,14 +74,23 @@ export function EventsSection() {
             </h2>
           </motion.div>
 
-          {events.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-6">
+              <Skeleton className="w-full aspect-video md:min-h-[340px] rounded-2xl" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Skeleton className="w-full aspect-square rounded-xl" />
+                <Skeleton className="w-full aspect-square rounded-xl hidden md:block" />
+                <Skeleton className="w-full aspect-square rounded-xl hidden md:block" />
+              </div>
+            </div>
+          ) : events.length === 0 ? (
             <motion.div variants={fadeUp} className="text-center py-12">
               <p className="font-body text-sm text-text-muted">
                 No upcoming events. Check back soon!
               </p>
             </motion.div>
           ) : (
-            <>
+            <div className="transition-opacity duration-500 space-y-6">
               {/* Featured event */}
               {featured && (
                 <motion.div variants={fadeUp}>
@@ -222,7 +235,7 @@ export function EventsSection() {
                   })}
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {/* View all */}

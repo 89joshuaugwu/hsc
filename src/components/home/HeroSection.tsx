@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { LiveBadge } from "@/components/layout/LiveBadge";
@@ -52,6 +53,7 @@ const PARTICLES = generateParticles(16);
 export function HeroSection() {
   const [heroImages, setHeroImages] = useState<Array<{url: string, publicId: string, order: number}>>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [tagline, setTagline] = useState(
     "A vibrant Anglican community of faith, worship, and fellowship at Enugu State University of Technology."
   );
@@ -72,6 +74,8 @@ export function HeroSection() {
         }
       } catch (error) {
         console.error("Failed to fetch hero data:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchHeroData();
@@ -100,25 +104,24 @@ export function HeroSection() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* ── Background: Image or Gradient ── */}
       <div className="absolute inset-0 z-0 bg-chapel-gradient overflow-hidden group/hero">
-        <AnimatePresence mode="wait">
-          {heroImages.length > 0 && (
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: 1.2, ease: "easeInOut" } }}
-              exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
-              className="absolute inset-0"
+        <div className={cn("absolute inset-0 transition-opacity duration-500", isLoading ? "opacity-0" : "opacity-100")}>
+          {heroImages.map((image, index) => (
+            <div
+              key={image.publicId || index}
+              className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+              style={{ opacity: index === currentIndex ? 1 : 0 }}
             >
-              <div
-                className={cn(
-                  "absolute inset-0 bg-cover bg-center bg-no-repeat",
-                  heroImages.length > 1 ? "hero-slide-active" : ""
-                )}
-                style={{ backgroundImage: `url(${heroImages[currentIndex].url})` }}
+              <Image
+                src={image.url}
+                alt={`Hero slide ${index + 1}`}
+                fill
+                className={cn("object-cover", index === currentIndex ? "hero-slide-active" : "")}
+                priority={index === 0}
+                sizes="100vw"
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          ))}
+        </div>
 
         {/* Hero overlay gradient */}
         <div
@@ -205,93 +208,108 @@ export function HeroSection() {
       </div>
 
       {/* ── Main Content ── */}
-      <motion.div
-        variants={stagger(0.2)}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto"
-      >
-        {/* LiveBadge — shown only when admin is live */}
-        <motion.div variants={fadeIn} className="mb-4">
-          <LiveBadge className="mx-auto" />
-        </motion.div>
-
-        {/* Motto Badge */}
-        <motion.p
-          variants={fadeIn}
-          className="font-display text-[0.7rem] sm:text-xs tracking-[0.3em] text-gold-500 uppercase mb-6"
-        >
-          Dominus Regnant · Arise, Shine
-        </motion.p>
-
-        {/* Chapel Name */}
-        <motion.h1
-          variants={heroReveal}
-          className="font-display text-[2.5rem] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold text-white uppercase tracking-wide leading-tight"
-        >
-          Holy Spirit Chapel
-        </motion.h1>
-
-        {/* Sub-name */}
-        <motion.p
-          variants={fadeUp}
-          className="font-display text-lg sm:text-xl md:text-[1.375rem] text-chapel-300 mt-3 tracking-widest uppercase"
-        >
-          ESUT Agbani
-        </motion.p>
-
-        {/* Gold Divider */}
+      {isLoading ? (
+        <div className="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto flex flex-col items-center gap-6 w-full opacity-50 animate-pulse">
+          <div className="w-24 h-6 bg-white/20 rounded-full" />
+          <div className="w-48 h-4 bg-white/20 rounded" />
+          <div className="w-3/4 max-w-lg h-16 sm:h-24 bg-white/20 rounded-lg" />
+          <div className="w-1/2 max-w-sm h-6 sm:h-8 bg-white/20 rounded" />
+          <div className="w-24 h-px bg-gold-500/50 my-6" />
+          <div className="w-full max-w-xl h-12 bg-white/20 rounded" />
+          <div className="flex gap-4 mt-10">
+            <div className="w-40 h-12 bg-white/20 rounded-full" />
+            <div className="w-40 h-12 bg-white/20 rounded-full" />
+          </div>
+        </div>
+      ) : (
         <motion.div
-          variants={{
-            hidden: { width: 0, opacity: 0 },
-            visible: {
-              width: 96,
-              opacity: 1,
-              transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-            },
-          }}
-          className="h-px bg-gold-500 mx-auto mt-6 mb-6"
-        />
-
-        {/* Tagline */}
-        <motion.p
-          variants={fadeUp}
-          className="font-heading text-base sm:text-lg text-white/75 italic max-w-xl mx-auto leading-relaxed"
+          variants={stagger(0.2)}
+          initial="hidden"
+          animate="visible"
+          className="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto"
         >
-          {tagline}
-        </motion.p>
+          {/* LiveBadge — shown only when admin is live */}
+          <motion.div variants={fadeIn} className="mb-4">
+            <LiveBadge className="mx-auto" />
+          </motion.div>
 
-        {/* CTA Buttons */}
-        <motion.div
-          variants={fadeUp}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
-        >
-          <Link
-            href="/contact"
-            className={cn(
-              "inline-flex items-center justify-center px-8 py-3.5 rounded-full",
-              "font-body font-bold text-sm sm:text-base",
-              "bg-gradient-to-r from-gold-500 to-gold-400 text-navy-700",
-              "hover:shadow-gold hover:-translate-y-0.5 active:translate-y-0",
-              "transition-all duration-200"
-            )}
+          {/* Motto Badge */}
+          <motion.p
+            variants={fadeIn}
+            className="font-display text-[0.7rem] sm:text-xs tracking-[0.3em] text-gold-500 uppercase mb-6"
           >
-            Join Us This Sunday
-          </Link>
-          <Link
-            href="/departments"
-            className={cn(
-              "inline-flex items-center justify-center px-8 py-3.5 rounded-full",
-              "font-body font-semibold text-sm sm:text-base",
-              "border-2 border-white/40 text-white",
-              "hover:bg-white/10 hover:border-white/60",
-              "transition-all duration-200"
-            )}
+            Dominus Regnant · Arise, Shine
+          </motion.p>
+
+          {/* Chapel Name */}
+          <motion.h1
+            variants={heroReveal}
+            className="font-display text-[2.5rem] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold text-white uppercase tracking-wide leading-tight"
           >
-            Our Departments
-          </Link>
+            Holy Spirit Chapel
+          </motion.h1>
+
+          {/* Sub-name */}
+          <motion.p
+            variants={fadeUp}
+            className="font-display text-lg sm:text-xl md:text-[1.375rem] text-chapel-300 mt-3 tracking-widest uppercase"
+          >
+            ESUT Agbani
+          </motion.p>
+
+          {/* Gold Divider */}
+          <motion.div
+            variants={{
+              hidden: { width: 0, opacity: 0 },
+              visible: {
+                width: 96,
+                opacity: 1,
+                transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+              },
+            }}
+            className="h-px bg-gold-500 mx-auto mt-6 mb-6"
+          />
+
+          {/* Tagline */}
+          <motion.p
+            variants={fadeUp}
+            className="font-heading text-base sm:text-lg text-white/75 italic max-w-xl mx-auto leading-relaxed"
+          >
+            {tagline}
+          </motion.p>
+
+          {/* CTA Buttons */}
+          <motion.div
+            variants={fadeUp}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
+          >
+            <Link
+              href="/contact"
+              className={cn(
+                "inline-flex items-center justify-center px-8 py-3.5 rounded-full",
+                "font-body font-bold text-sm sm:text-base",
+                "bg-gradient-to-r from-gold-500 to-gold-400 text-navy-700",
+                "hover:shadow-gold hover:-translate-y-0.5 active:translate-y-0",
+                "transition-all duration-200"
+              )}
+            >
+              Join Us This Sunday
+            </Link>
+            <Link
+              href="/departments"
+              className={cn(
+                "inline-flex items-center justify-center px-8 py-3.5 rounded-full",
+                "font-body font-semibold text-sm sm:text-base",
+                "border-2 border-white/40 text-white",
+                "hover:bg-white/10 hover:border-white/60",
+                "transition-all duration-200"
+              )}
+            >
+              Our Departments
+            </Link>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
 
       {/* ── Slide Indicators ── */}
       {heroImages.length > 1 && (

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Eye, Check, X as XIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,15 +22,17 @@ export default function AdminPaymentsPage() {
   const [proofUrl, setProofUrl] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
 
-  const fetchAll = async () => {
-    try {
-      const q = query(collection(db, "transactions"), orderBy("createdAt", "desc"));
-      const snap = await getDocs(q);
+  useEffect(() => {
+    const q = query(collection(db, "transactions"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
       setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Tx));
-    } catch (e) { console.error(e); } finally { setLoading(false); }
-  };
-
-  useEffect(() => { fetchAll(); }, []);
+      setLoading(false);
+    }, (error) => {
+      console.error(error);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   const filtered = tab === "All" ? items : items.filter((t) => t.status === tab.toLowerCase());
   const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
@@ -40,7 +42,7 @@ export default function AdminPaymentsPage() {
     setProcessing(id);
     try {
       const r = await fetch("/api/admin/payments/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transactionId: id }) });
-      if (r.ok) { toast.success("Payment verified!"); fetchAll(); } else { const d = await r.json(); toast.error(d.error || "Failed."); }
+      if (r.ok) { toast.success("Payment verified!"); } else { const d = await r.json(); toast.error(d.error || "Failed."); }
     } catch { toast.error("Error verifying."); } finally { setProcessing(null); }
   };
 
@@ -50,7 +52,7 @@ export default function AdminPaymentsPage() {
     setProcessing(id);
     try {
       const r = await fetch("/api/admin/payments/reject", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transactionId: id, reason }) });
-      if (r.ok) { toast.success("Payment rejected."); fetchAll(); } else toast.error("Failed.");
+      if (r.ok) { toast.success("Payment rejected."); } else toast.error("Failed.");
     } catch { toast.error("Error."); } finally { setProcessing(null); }
   };
 

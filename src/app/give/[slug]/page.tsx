@@ -7,7 +7,7 @@ import {
   collection,
   query,
   where,
-  getDocs,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { motion } from "framer-motion";
@@ -54,24 +54,25 @@ export default function GiveSlugPage() {
 
   /* ── Fetch give option by slug ── */
   useEffect(() => {
-    async function fetchOption() {
-      try {
-        const q = query(
-          collection(db, "give_options"),
-          where("slug", "==", slug),
-          where("isActive", "==", true)
-        );
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          setOption({ id: snap.docs[0].id, ...snap.docs[0].data() } as GiveOption);
-        }
-      } catch (error) {
-        console.error("Failed to fetch give option:", error);
-      } finally {
-        setLoading(false);
+    if (!slug) return;
+    const q = query(
+      collection(db, "give_options"),
+      where("slug", "==", slug),
+      where("isActive", "==", true)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        setOption({ id: snap.docs[0].id, ...snap.docs[0].data() } as GiveOption);
+      } else {
+        setOption(null);
       }
-    }
-    if (slug) fetchOption();
+      setLoading(false);
+    }, (error) => {
+      console.error("Failed to fetch give option:", error);
+      setLoading(false);
+    });
+
+    return () => unsub();
   }, [slug]);
 
   /* ── Set default tab based on enabled methods ── */

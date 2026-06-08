@@ -3,11 +3,12 @@
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { motion, useInView } from "framer-motion";
 import { fadeUp, stagger } from "@/lib/motion";
 import { ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface GalleryItem {
   id: string;
@@ -17,6 +18,7 @@ interface GalleryItem {
 
 export function GalleryTeaser() {
   const [items, setItems] = useState<GalleryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -32,12 +34,14 @@ export function GalleryTeaser() {
         setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as GalleryItem));
       } catch (err) {
         console.error("Gallery fetch error:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetch();
   }, []);
 
-  if (items.length === 0) return null;
+  if (!isLoading && items.length === 0) return null;
 
   return (
     <section ref={ref} className="py-16 md:py-20 bg-ivory-dark">
@@ -59,25 +63,38 @@ export function GalleryTeaser() {
           </motion.div>
 
           {/* Mosaic grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {items.map((item, i) => (
-              <motion.div
-                key={item.id}
-                variants={fadeUp}
-                className={`relative rounded-xl overflow-hidden group cursor-pointer ${
-                  i === 0 ? "row-span-2 aspect-[3/4]" : "aspect-square"
-                }`}
-              >
-                <Image
-                  src={item.imageUrl}
-                  alt={item.caption || "Gallery image"}
-                  fill
-                  className="object-cover transition-all duration-500 group-hover:scale-[1.04] group-hover:brightness-110"
-                  sizes="(max-width: 768px) 50vw, 33vw"
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className={`relative rounded-xl w-full ${
+                    i === 0 ? "row-span-2 aspect-[3/4]" : "aspect-square"
+                  }`}
                 />
-              </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 transition-opacity duration-500">
+              {items.map((item, i) => (
+                <motion.div
+                  key={item.id}
+                  variants={fadeUp}
+                  className={`relative rounded-xl overflow-hidden group cursor-pointer ${
+                    i === 0 ? "row-span-2 aspect-[3/4]" : "aspect-square"
+                  }`}
+                >
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.caption || "Gallery image"}
+                    fill
+                    className="object-cover transition-all duration-500 group-hover:scale-[1.04] group-hover:brightness-110"
+                    sizes="(max-width: 768px) 50vw, 33vw"
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           {/* CTA */}
           <motion.div variants={fadeUp} className="text-center">
