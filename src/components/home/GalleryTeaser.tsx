@@ -10,14 +10,17 @@ import { fadeUp, stagger } from "@/lib/motion";
 import { ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-interface GalleryItem {
+import { Camera } from "lucide-react";
+
+interface AlbumTeaser {
   id: string;
-  imageUrl: string;
-  caption: string;
+  title: string;
+  coverImageUrl: string;
+  imageCount: number;
 }
 
 export function GalleryTeaser() {
-  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [items, setItems] = useState<AlbumTeaser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -26,12 +29,12 @@ export function GalleryTeaser() {
     async function fetch() {
       try {
         const q = query(
-          collection(db, "gallery"),
-          orderBy("uploadedAt", "desc"),
+          collection(db, "gallery_albums"),
+          orderBy("createdAt", "desc"),
           limit(6)
         );
         const snap = await getDocs(q);
-        setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as GalleryItem));
+        setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as AlbumTeaser));
       } catch (err) {
         console.error("Gallery fetch error:", err);
       } finally {
@@ -85,12 +88,19 @@ export function GalleryTeaser() {
                   }`}
                 >
                   <Image
-                    src={item.imageUrl}
-                    alt={item.caption || "Gallery image"}
+                    src={item.coverImageUrl}
+                    alt={item.title}
                     fill
                     className="object-cover transition-all duration-500 group-hover:scale-[1.04] group-hover:brightness-110"
                     sizes="(max-width: 768px) 50vw, 33vw"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+                  <span className="absolute top-2 right-2 bg-black/60 text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
+                    <Camera size={10} /> {item.imageCount}
+                  </span>
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <h3 className="font-heading text-sm font-bold text-white leading-tight truncate">{item.title}</h3>
+                  </div>
                 </motion.div>
               ))}
             </div>

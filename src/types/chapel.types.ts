@@ -121,14 +121,23 @@ export type GalleryCategory =
   | "events";
 
 export interface GalleryImage {
-  id: string;
-  imageUrl: string;
+  url: string;
   publicId: string;
   caption?: string;
-  category: GalleryCategory;
   order: number;
+}
+
+export interface GalleryAlbum {
+  id: string;
+  title: string;
+  description?: string;
+  category: GalleryCategory;
+  coverImageUrl: string;
+  coverPublicId: string;
+  images: GalleryImage[];
+  imageCount: number;
   isActive: boolean;
-  uploadedAt: Timestamp;
+  createdAt: Timestamp;
 }
 
 // ─── Give Options ───

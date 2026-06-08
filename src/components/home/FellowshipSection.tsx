@@ -4,13 +4,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { fadeUp, stagger } from "@/lib/motion";
-import { useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export function FellowshipSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchChapelInfo() {
+      try {
+        const snap = await getDoc(doc(db, "chapel_info", "main"));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.heroImages && data.heroImages.length > 0) {
+            setHeroImageUrl(data.heroImages[0].url);
+          } else if (data.heroImageUrl) {
+            setHeroImageUrl(data.heroImageUrl);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch chapel info for fellowship section:", err);
+      }
+    }
+    fetchChapelInfo();
+  }, []);
 
   return (
     <section ref={ref} className="py-16 md:py-20 bg-white">
@@ -23,14 +45,28 @@ export function FellowshipSection() {
         >
           {/* Right image (shows first on mobile) */}
           <motion.div variants={fadeUp} className="md:col-span-2 md:order-2">
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-red-100 to-red-200">
-              <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden group">
+              {heroImageUrl ? (
+                <>
+                  <Image
+                    src={heroImageUrl}
+                    alt="Fellowship Background"
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-navy-900/40 mix-blend-multiply" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent" />
+                </>
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-chapel-300 to-navy-500" />
+              )}
+              <div className="absolute inset-0 flex items-center justify-center p-8">
                 <Image
                   src="/flogo.png"
                   alt="Anglican Students Fellowship"
                   width={200}
                   height={200}
-                  className="object-contain"
+                  className="object-contain drop-shadow-2xl z-10"
                 />
               </div>
             </div>

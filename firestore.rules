@@ -53,6 +53,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Gallery Albums — public read, admin write
+    match /gallery_albums/{albumId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Give Options — public read, admin write
     match /give_options/{giveId} {
       allow read: if true;
