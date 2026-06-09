@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -90,15 +90,7 @@ export function HeroSection() {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index);
-  };
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length);
-  };
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % heroImages.length);
-  };
+
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -132,23 +124,7 @@ export function HeroSection() {
           }}
         />
 
-        {/* Slide Navigation Arrows */}
-        {heroImages.length > 1 && (
-          <>
-            <button
-              onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 opacity-0 group-hover/hero:opacity-100 transition-opacity hidden md:block"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 opacity-0 group-hover/hero:opacity-100 transition-opacity hidden md:block"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </>
-        )}
+
       </div>
 
       {/* ── Radial Glow (top center) ── */}
@@ -311,24 +287,7 @@ export function HeroSection() {
         </motion.div>
       )}
 
-      {/* ── Slide Indicators ── */}
-      {heroImages.length > 1 && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-          {heroImages.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => goToSlide(idx)}
-              className="relative p-1 flex items-center justify-center"
-            >
-              {currentIndex === idx ? (
-                <motion.div layoutId="hero-dot" className="w-6 h-2 rounded-full bg-white" />
-              ) : (
-                <div className="w-2 h-2 rounded-full bg-white/40 hover:bg-white/60 transition-colors" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* ── Scroll Indicator ── */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
