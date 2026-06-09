@@ -20,6 +20,7 @@ export interface Socials {
   whatsapp?: string;
 }
 
+
 export interface ChapelInfo {
   chapelName: string;
   fellowshipName: string;
