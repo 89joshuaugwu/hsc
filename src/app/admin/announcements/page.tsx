@@ -10,7 +10,9 @@ import { toast } from "sonner";
 import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface Announcement { id: string; title: string; content: string; category: string; isPriority: boolean; isActive: boolean; startDate: string; endDate: string; createdAt: { toDate: () => Date }; }
-type FormData = { title: string; content: string; category: string; isPriority: boolean; isActive: boolean; startDate: string; endDate: string; };
+type FormData = { title: string; content: string; category: string; customCategory?: string; isPriority: boolean; isActive: boolean; startDate: string; endDate: string; };
+
+const ANN_CATS = ["General", "Worship", "Community", "Youth"];
 
 export default function AdminAnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([]);
@@ -19,7 +21,8 @@ export default function AdminAnnouncementsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
-  const { register, handleSubmit, reset, setValue } = useForm<FormData>({ defaultValues: { isActive: true, isPriority: false } });
+  const { register, handleSubmit, reset, setValue, watch } = useForm<FormData>({ defaultValues: { isActive: true, isPriority: false, category: "General" } });
+  const catVal = watch("category");
 
   const fetchAll = async () => {
     try {
@@ -34,11 +37,15 @@ export default function AdminAnnouncementsPage() {
   const onSave = async (data: FormData) => {
     setSaving(true);
     try {
+      const finalCategory = data.category === "Custom" ? (data.customCategory?.trim() || "General") : data.category;
+      const payload = { ...data, category: finalCategory };
+      delete payload.customCategory;
+
       if (editId) {
-        await updateDoc(doc(db, "announcements", editId), { ...data, updatedAt: Timestamp.now() });
+        await updateDoc(doc(db, "announcements", editId), { ...payload, updatedAt: Timestamp.now() });
         toast.success("Updated!");
       } else {
-        await addDoc(collection(db, "announcements"), { ...data, createdAt: Timestamp.now() });
+        await addDoc(collection(db, "announcements"), { ...payload, createdAt: Timestamp.now() });
         toast.success("Created!");
       }
       setShowForm(false); setEditId(null); reset({ isActive: true, isPriority: false }); fetchAll();
@@ -47,7 +54,14 @@ export default function AdminAnnouncementsPage() {
 
   const handleEdit = (item: Announcement) => {
     setEditId(item.id);
-    setValue("title", item.title); setValue("content", item.content); setValue("category", item.category);
+    setValue("title", item.title); setValue("content", item.content); 
+    if (ANN_CATS.includes(item.category || "General")) {
+      setValue("category", item.category || "General");
+      setValue("customCategory", "");
+    } else {
+      setValue("category", "Custom");
+      setValue("customCategory", item.category);
+    }
     setValue("isPriority", item.isPriority); setValue("isActive", item.isActive);
     setValue("startDate", item.startDate || ""); setValue("endDate", item.endDate || "");
     setShowForm(true);
@@ -73,7 +87,15 @@ export default function AdminAnnouncementsPage() {
           <input {...register("title", { required: true })} placeholder="Title" className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
           <textarea {...register("content", { required: true })} placeholder="Content" rows={4} className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm resize-none focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <select {...register("category")} className="px-3 py-2.5 rounded-lg border border-border font-body text-sm"><option value="General">General</option><option value="Worship">Worship</option><option value="Community">Community</option><option value="Youth">Youth</option></select>
+            <div className="flex gap-2">
+              <select {...register("category")} className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm">
+                {ANN_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="Custom">Custom...</option>
+              </select>
+              {catVal === "Custom" && (
+                <input {...register("customCategory")} placeholder="Custom category" className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+              )}
+            </div>
             <input {...register("startDate")} type="date" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm" />
             <input {...register("endDate")} type="date" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm" placeholder="End (opt)" />
           </div>

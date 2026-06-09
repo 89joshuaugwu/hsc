@@ -21,16 +21,16 @@ export default function AdminGalleryAlbumsPage() {
   // Create state
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newDesc, setNewDesc] = useState("");
   const [newCategory, setNewCategory] = useState("community");
+  const [customNewCategory, setCustomNewCategory] = useState("");
   const [newImages, setNewImages] = useState<Array<{url: string, publicId: string, caption: string}>>([]);
   const [creatingProcess, setCreatingProcess] = useState(false);
 
   // Edit state
   const [editAlbum, setEditAlbum] = useState<GalleryAlbum | null>(null);
   const [editTitle, setEditTitle] = useState("");
-  const [editDesc, setEditDesc] = useState("");
   const [editCategory, setEditCategory] = useState("");
+  const [customEditCategory, setCustomEditCategory] = useState("");
   const [editImages, setEditImages] = useState<GalleryImage[]>([]);
 
   // Modals
@@ -89,7 +89,9 @@ export default function AdminGalleryAlbumsPage() {
   };
 
   const handleCreate = async () => {
+    const finalCategory = newCategory === "custom" ? customNewCategory.trim() : newCategory;
     if (!newTitle.trim()) { toast.error("Title is required"); return; }
+    if (newCategory === "custom" && !finalCategory) { toast.error("Custom category cannot be empty"); return; }
     if (newImages.length === 0) { toast.error("Upload at least one image"); return; }
     setCreatingProcess(true);
     try {
@@ -103,7 +105,7 @@ export default function AdminGalleryAlbumsPage() {
       await addDoc(collection(db, "gallery_albums"), {
         title: newTitle.trim(),
         description: newDesc.trim(),
-        category: newCategory,
+        category: finalCategory,
         coverImageUrl: formattedImages[0].url,
         coverPublicId: formattedImages[0].publicId,
         images: formattedImages,
@@ -126,13 +128,21 @@ export default function AdminGalleryAlbumsPage() {
     setEditAlbum(album);
     setEditTitle(album.title);
     setEditDesc(album.description || "");
-    setEditCategory(album.category);
+    if (CATS.includes(album.category.toLowerCase())) {
+      setEditCategory(album.category.toLowerCase());
+      setCustomEditCategory("");
+    } else {
+      setEditCategory("custom");
+      setCustomEditCategory(album.category);
+    }
     setEditImages([...album.images]);
   };
 
   const handleSaveEdit = async () => {
     if (!editAlbum) return;
+    const finalCategory = editCategory === "custom" ? customEditCategory.trim() : editCategory;
     if (!editTitle.trim()) { toast.error("Title is required"); return; }
+    if (editCategory === "custom" && !finalCategory) { toast.error("Custom category cannot be empty"); return; }
     if (editImages.length === 0) { toast.error("Album must have at least one image"); return; }
     
     try {
@@ -147,7 +157,7 @@ export default function AdminGalleryAlbumsPage() {
       await updateDoc(doc(db, "gallery_albums", editAlbum.id), {
         title: editTitle.trim(),
         description: editDesc.trim(),
-        category: editCategory,
+        category: finalCategory,
         coverImageUrl: coverUrl,
         coverPublicId: coverId,
         images: editImages.map((img, idx) => ({ ...img, order: idx })),
@@ -196,9 +206,15 @@ export default function AdminGalleryAlbumsPage() {
           <div className="space-y-6 pt-6 mt-4 border-t border-border/40">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Album Title *" className="px-4 py-2 border border-border rounded-lg w-full font-body text-sm focus:outline-none focus:border-chapel-400" />
-              <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="px-4 py-2 border border-border rounded-lg w-full font-body text-sm focus:outline-none focus:border-chapel-400 capitalize">
-                {CATS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <div className="flex gap-2">
+                <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="px-4 py-2 border border-border rounded-lg w-full font-body text-sm focus:outline-none focus:border-chapel-400 capitalize">
+                  {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                  <option value="custom">Custom...</option>
+                </select>
+                {newCategory === "custom" && (
+                  <input value={customNewCategory} onChange={e => setCustomNewCategory(e.target.value)} placeholder="Custom category" className="px-4 py-2 border border-border rounded-lg w-full font-body text-sm focus:outline-none focus:border-chapel-400" />
+                )}
+              </div>
             </div>
             <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description (optional)" className="px-4 py-2 border border-border rounded-lg w-full h-24 font-body text-sm focus:outline-none focus:border-chapel-400" />
             
@@ -296,9 +312,15 @@ export default function AdminGalleryAlbumsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-navy-500 mb-1">Category</label>
-                  <select value={editCategory} onChange={e => setEditCategory(e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg font-body text-sm focus:outline-none focus:border-chapel-400 capitalize">
-                    {CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <div className="flex gap-2">
+                    <select value={editCategory} onChange={e => setEditCategory(e.target.value)} className="w-full px-4 py-2 border border-border rounded-lg font-body text-sm focus:outline-none focus:border-chapel-400 capitalize">
+                      {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="custom">Custom...</option>
+                    </select>
+                    {editCategory === "custom" && (
+                      <input value={customEditCategory} onChange={e => setCustomEditCategory(e.target.value)} placeholder="Custom category" className="w-full px-4 py-2 border border-border rounded-lg font-body text-sm focus:outline-none focus:border-chapel-400" />
+                    )}
+                  </div>
                 </div>
               </div>
               <div>

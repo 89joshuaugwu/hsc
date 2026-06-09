@@ -11,7 +11,9 @@ import { ImageUpload } from "@/components/admin/upload/ImageUpload";
 import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface EventItem { id: string; title: string; description: string; category: string; startDate: { toDate: () => Date } | null; endDate: { toDate: () => Date } | null; location: string; coverImageUrl: string; coverImagePublicId?: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; createdAt: { toDate: () => Date }; }
-type FormData = { title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; coverImagePublicId: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; };
+type FormData = { title: string; description: string; category: string; customCategory?: string; startDate: string; endDate: string; location: string; coverImageUrl: string; coverImagePublicId: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; };
+
+const EVENT_CATS = ["Worship", "Community", "Youth", "Outreach"];
 
 export default function AdminEventsPage() {
   const [items, setItems] = useState<EventItem[]>([]);
@@ -21,8 +23,9 @@ export default function AdminEventsPage() {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all");
   const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null; publicId?: string }>({ isOpen: false, id: null });
-  const { register, handleSubmit, reset, setValue, watch } = useForm<FormData>({ defaultValues: { isActive: true, isFeatured: false, requiresRegistration: false } });
+  const { register, handleSubmit, reset, setValue, watch } = useForm<FormData>({ defaultValues: { isActive: true, isFeatured: false, requiresRegistration: false, category: "Worship" } });
   const reqReg = watch("requiresRegistration");
+  const catVal = watch("category");
 
   const fetchAll = async () => {
     try {
@@ -40,7 +43,10 @@ export default function AdminEventsPage() {
   const onSave = async (data: FormData) => {
     setSaving(true);
     try {
-      const payload = { ...data, coverImagePublicId: data.coverImagePublicId || null, startDate: data.startDate ? Timestamp.fromDate(new Date(data.startDate)) : null, endDate: data.endDate ? Timestamp.fromDate(new Date(data.endDate)) : null };
+      const finalCategory = data.category === "Custom" ? (data.customCategory?.trim() || "General") : data.category;
+      const payload = { ...data, category: finalCategory, coverImagePublicId: data.coverImagePublicId || null, startDate: data.startDate ? Timestamp.fromDate(new Date(data.startDate)) : null, endDate: data.endDate ? Timestamp.fromDate(new Date(data.endDate)) : null };
+      delete payload.customCategory;
+
       if (editId) { await updateDoc(doc(db, "events", editId), { ...payload, updatedAt: Timestamp.now() }); toast.success("Updated!"); }
       else { await addDoc(collection(db, "events"), { ...payload, createdAt: Timestamp.now() }); toast.success("Created!"); }
       setShowForm(false); setEditId(null); reset({ isActive: true, isFeatured: false, requiresRegistration: false, coverImageUrl: "", coverImagePublicId: "" }); fetchAll();
@@ -56,7 +62,14 @@ export default function AdminEventsPage() {
 
   const handleEdit = (item: EventItem) => {
     setEditId(item.id);
-    setValue("title", item.title); setValue("description", item.description); setValue("category", item.category);
+    setValue("title", item.title); setValue("description", item.description); 
+    if (EVENT_CATS.includes(item.category)) {
+      setValue("category", item.category);
+      setValue("customCategory", "");
+    } else {
+      setValue("category", "Custom");
+      setValue("customCategory", item.category);
+    }
     setValue("location", item.location); setValue("coverImageUrl", item.coverImageUrl || ""); setValue("coverImagePublicId", item.coverImagePublicId || "");
     setValue("isFeatured", item.isFeatured); setValue("requiresRegistration", item.requiresRegistration);
     setValue("registrationUrl", item.registrationUrl || ""); setValue("isActive", item.isActive);
@@ -97,7 +110,15 @@ export default function AdminEventsPage() {
           <input {...register("title", { required: true })} placeholder="Event title" className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
           <textarea {...register("description")} placeholder="Description" rows={3} className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm resize-none focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <select {...register("category")} className="px-3 py-2.5 rounded-lg border border-border font-body text-sm"><option value="Worship">Worship</option><option value="Community">Community</option><option value="Youth">Youth</option><option value="Outreach">Outreach</option></select>
+            <div className="flex gap-2">
+              <select {...register("category")} className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm">
+                {EVENT_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="Custom">Custom...</option>
+              </select>
+              {catVal === "Custom" && (
+                <input {...register("customCategory")} placeholder="Custom category" className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+              )}
+            </div>
             <input {...register("startDate")} type="datetime-local" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm" />
             <input {...register("endDate")} type="datetime-local" className="px-3 py-2.5 rounded-lg border border-border font-body text-sm" />
           </div>
