@@ -137,9 +137,9 @@ export default function GalleryPage() {
           <p className="font-body text-base text-white/60 mt-3">Moments of worship, fellowship, and service</p>
         </motion.div>
         <div className="relative mt-10 max-w-3xl mx-auto px-4">
-          <div className="flex gap-2 overflow-x-auto pb-1 justify-center scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 justify-start md:justify-center scrollbar-hide">
             {CATS.map((c) => (
-              <button key={c} onClick={() => setCat(c)} className={cn("px-4 py-2 rounded-full font-body text-sm font-semibold whitespace-nowrap transition-all", cat === c ? "bg-gold-500 text-navy-700" : "bg-white/10 text-white/70 hover:bg-white/20")}>{c}</button>
+              <button key={c} onClick={() => setCat(c)} className={cn("flex-shrink-0 px-4 py-2 rounded-full font-body text-sm font-semibold whitespace-nowrap transition-all", cat === c ? "bg-gold-500 text-navy-700" : "bg-white/10 text-white/70 hover:bg-white/20")}>{c}</button>
             ))}
           </div>
         </div>

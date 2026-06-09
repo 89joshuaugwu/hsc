@@ -6,11 +6,11 @@ import { db } from "@/lib/firebase";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { MapPin, Phone, Mail as MailIcon, ExternalLink, Check, Loader2, Globe } from "lucide-react";
+import { MapPin, Phone, Mail as MailIcon, ExternalLink, Check, Loader2, Globe, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { fadeUp } from "@/lib/motion";
 
-interface ChapelContact { address: string; phone: string[]; email: string; socials: Record<string, string>; serviceTimes: { label: string; day: string; time: string }[]; }
+interface ChapelContact { address: string; phone: string[]; email: string; socials: Record<string, string>; serviceTimes: { label: string; day: string; time: string }[]; mapEmbedUrl?: string; mapDirectionsUrl?: string; }
 
 export default function ContactPage() {
   const [tab, setTab] = useState(0);
@@ -57,8 +57,10 @@ export default function ContactPage() {
               </div>
               {info?.socials && (
                 <div className="flex gap-3 pt-2">
-                  {info.socials.facebook && <a href={info.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-chapel-400/10 text-chapel-400 hover:bg-chapel-400/20"><Globe size={16} /></a>}
-                  {info.socials.instagram && <a href={info.socials.instagram} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-chapel-400/10 text-chapel-400 hover:bg-chapel-400/20"><Globe size={16} /></a>}
+                  {info.socials.facebook && <a href={info.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-chapel-400/10 text-chapel-400 hover:bg-chapel-400/20"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>}
+                  {info.socials.instagram && <a href={info.socials.instagram} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-chapel-400/10 text-chapel-400 hover:bg-chapel-400/20"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>}
+                  {info.socials.twitter && <a href={info.socials.twitter} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-chapel-400/10 text-chapel-400 hover:bg-chapel-400/20"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></a>}
+                  {info.socials.whatsapp && <a href={info.socials.whatsapp} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-chapel-400/10 text-chapel-400 hover:bg-chapel-400/20"><MessageCircle size={16} /></a>}
                 </div>
               )}
             </motion.div>
@@ -78,9 +80,9 @@ export default function ContactPage() {
             )}
 
             <div className="rounded-xl overflow-hidden border border-border">
-              <iframe src="https://maps.google.com/maps?q=ESUT+Agbani+Enugu&output=embed" width="100%" height="300" style={{ border: 0 }} loading="lazy" title="Chapel Location" />
+              <iframe src={info?.mapEmbedUrl || "https://maps.google.com/maps?q=ESUT+Agbani+Enugu&output=embed"} width="100%" height="300" style={{ border: 0 }} loading="lazy" title="Chapel Location" />
             </div>
-            <a href="https://maps.google.com/?q=ESUT+Agbani+Enugu" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-chapel-400 text-white font-body text-sm font-bold rounded-full hover:bg-chapel-500 transition-colors w-full justify-center">
+            <a href={info?.mapDirectionsUrl || "https://maps.google.com/?q=ESUT+Agbani+Enugu"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-chapel-400 text-white font-body text-sm font-bold rounded-full hover:bg-chapel-500 transition-colors w-full justify-center">
               <ExternalLink size={14} /> Get Directions
             </a>
           </div>

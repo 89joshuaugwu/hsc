@@ -41,6 +41,8 @@ interface SettingsForm {
   visionStatement: string;
   scriptureVerse: string;
   scriptureReference: string;
+  mapEmbedUrl: string;
+  mapDirectionsUrl: string;
 }
 
 interface EmailConfigForm {
@@ -72,6 +74,8 @@ export default function AdminSettingsPage() {
       visionStatement: "",
       scriptureVerse: "",
       scriptureReference: "",
+      mapEmbedUrl: "",
+      mapDirectionsUrl: "",
     },
   });
 
@@ -115,6 +119,8 @@ export default function AdminSettingsPage() {
             visionStatement: d.visionStatement || "",
             scriptureVerse: d.scriptureVerse || "",
             scriptureReference: d.scriptureReference || "",
+            mapEmbedUrl: d.mapEmbedUrl || "",
+            mapDirectionsUrl: d.mapDirectionsUrl || "",
           });
         }
 
@@ -160,6 +166,8 @@ export default function AdminSettingsPage() {
           visionStatement: data.visionStatement,
           scriptureVerse: data.scriptureVerse,
           scriptureReference: data.scriptureReference,
+          mapEmbedUrl: data.mapEmbedUrl,
+          mapDirectionsUrl: data.mapDirectionsUrl,
           updatedAt: Timestamp.now(),
         },
         { merge: true }
@@ -303,6 +311,17 @@ export default function AdminSettingsPage() {
           <div>
             <label className="block font-body text-xs font-semibold text-text-muted mb-1">Address</label>
             <input {...chapelForm.register("address")} className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-body text-xs font-semibold text-text-muted mb-1">Google Maps Embed URL</label>
+              <input {...chapelForm.register("mapEmbedUrl")} placeholder="https://maps.google.com/maps?q=...&output=embed" className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+            </div>
+            <div>
+              <label className="block font-body text-xs font-semibold text-text-muted mb-1">Get Directions URL</label>
+              <input {...chapelForm.register("mapDirectionsUrl")} placeholder="https://maps.google.com/?q=..." className="w-full px-3 py-2.5 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
+            </div>
           </div>
 
           <div>

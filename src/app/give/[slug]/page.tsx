@@ -546,16 +546,19 @@ export default function GiveSlugPage() {
                         Upload Payment Proof
                       </label>
                       {screenshotUrl ? (
-                        <div className="relative rounded-xl overflow-hidden border border-green-200 bg-green-50 p-4">
-                          <div className="flex items-center gap-3">
-                            <Check size={20} className="text-green-600 flex-shrink-0" />
-                            <span className="font-body text-sm text-green-700 font-semibold">
+                        <div className="relative rounded-xl overflow-hidden border border-green-200 bg-green-50 p-4 flex flex-col items-center gap-4">
+                          <div className="flex items-center gap-2 text-green-700 w-full justify-center">
+                            <Check size={20} className="flex-shrink-0" />
+                            <span className="font-body text-sm font-semibold">
                               Screenshot uploaded successfully
                             </span>
                           </div>
+                          <div className="relative w-full max-w-xs aspect-auto rounded-lg overflow-hidden border border-green-200/50 shadow-sm">
+                            <img src={screenshotUrl} alt="Receipt Preview" className="w-full h-auto object-contain" />
+                          </div>
                           <button
                             onClick={() => { setScreenshotUrl(""); setScreenshotPublicId(""); }}
-                            className="mt-2 font-body text-xs text-green-600 hover:text-green-800 underline"
+                            className="font-body text-xs text-green-600 hover:text-green-800 underline"
                           >
                             Replace screenshot
                           </button>

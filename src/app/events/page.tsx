@@ -111,13 +111,13 @@ export default function EventsPage() {
 
         {/* Filter tabs */}
         <div className="relative mt-10 max-w-3xl mx-auto px-4">
-          <div className="flex gap-2 overflow-x-auto pb-1 justify-center scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 justify-start md:justify-center scrollbar-hide">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => { setActiveCategory(cat); setVisibleCount(ITEMS_PER_PAGE); }}
                 className={cn(
-                  "px-4 py-2 rounded-full font-body text-sm font-semibold whitespace-nowrap transition-all",
+                  "flex-shrink-0 px-4 py-2 rounded-full font-body text-sm font-semibold whitespace-nowrap transition-all",
                   activeCategory === cat
                     ? "bg-gold-500 text-navy-700"
                     : "bg-white/10 text-white/70 hover:bg-white/20"

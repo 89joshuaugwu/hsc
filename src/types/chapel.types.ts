@@ -36,6 +36,8 @@ export interface ChapelInfo {
   visionStatement: string;
   scriptureVerse: string;
   scriptureReference: string;
+  mapEmbedUrl?: string;
+  mapDirectionsUrl?: string;
   updatedAt: Timestamp;
 }
 
