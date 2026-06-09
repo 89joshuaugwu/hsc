@@ -21,6 +21,7 @@ export default function AdminGalleryAlbumsPage() {
   // Create state
   const [isCreating, setIsCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [newDesc, setNewDesc] = useState("");
   const [newCategory, setNewCategory] = useState("community");
   const [customNewCategory, setCustomNewCategory] = useState("");
   const [newImages, setNewImages] = useState<Array<{url: string, publicId: string, caption: string}>>([]);
@@ -29,6 +30,7 @@ export default function AdminGalleryAlbumsPage() {
   // Edit state
   const [editAlbum, setEditAlbum] = useState<GalleryAlbum | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [customEditCategory, setCustomEditCategory] = useState("");
   const [editImages, setEditImages] = useState<GalleryImage[]>([]);
