@@ -68,9 +68,9 @@ export default function AdminLayout({
       <AdminSidebar />
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col min-h-screen md:ml-64">
+      <div className="flex-1 flex flex-col min-h-screen md:ml-64 min-w-0">
         <AdminTopBar user={user} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden w-full">
           {children}
         </main>
       </div>
