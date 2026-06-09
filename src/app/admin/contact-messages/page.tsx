@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { Trash2, Mail, MailOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface Msg { id: string; name: string; email: string; subject: string; message: string; isRead: boolean; createdAt: { toDate: () => Date }; }
 
@@ -13,6 +14,7 @@ export default function AdminContactMessagesPage() {
   const [items, setItems] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   useEffect(() => {
     const q = query(collection(db, "contact_messages"), orderBy("createdAt", "desc"));
@@ -38,9 +40,11 @@ export default function AdminContactMessagesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this message?")) return;
-    try { await deleteDoc(doc(db, "contact_messages", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Failed."); }
+  const confirmDelete = (id: string) => setConfirmData({ isOpen: true, id });
+  const handleDelete = async () => {
+    const id = confirmData.id;
+    if (!id) return;
+    try { await deleteDoc(doc(db, "contact_messages", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Failed."); } finally { setConfirmData({ isOpen: false, id: null }); }
   };
 
   const unreadCount = items.filter((i) => !i.isRead).length;
@@ -69,7 +73,7 @@ export default function AdminContactMessagesPage() {
                 </div>
                 <span className="font-body text-[0.65rem] text-text-light whitespace-nowrap">{msg.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || ""}</span>
                 <div className="flex gap-1">
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); confirmDelete(msg.id); }} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
                   {expanded === msg.id ? <ChevronUp size={14} className="text-text-light" /> : <ChevronDown size={14} className="text-text-light" />}
                 </div>
               </div>
@@ -87,6 +91,15 @@ export default function AdminContactMessagesPage() {
           ))}
         </div>}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Delete Message"
+        message="Are you sure you want to delete this message?"
+        confirmText="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

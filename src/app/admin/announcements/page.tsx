@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Plus, Edit2, Trash2, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface Announcement { id: string; title: string; content: string; category: string; isPriority: boolean; isActive: boolean; startDate: string; endDate: string; createdAt: { toDate: () => Date }; }
 type FormData = { title: string; content: string; category: string; isPriority: boolean; isActive: boolean; startDate: string; endDate: string; };
@@ -17,6 +18,7 @@ export default function AdminAnnouncementsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
   const { register, handleSubmit, reset, setValue } = useForm<FormData>({ defaultValues: { isActive: true, isPriority: false } });
 
   const fetchAll = async () => {
@@ -51,9 +53,11 @@ export default function AdminAnnouncementsPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this announcement?")) return;
-    try { await deleteDoc(doc(db, "announcements", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Delete failed."); }
+  const confirmDelete = (id: string) => setConfirmData({ isOpen: true, id });
+  const handleDelete = async () => {
+    const id = confirmData.id;
+    if (!id) return;
+    try { await deleteDoc(doc(db, "announcements", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Deleted."); } catch { toast.error("Delete failed."); } finally { setConfirmData({ isOpen: false, id: null }); }
   };
 
   return (
@@ -94,13 +98,22 @@ export default function AdminAnnouncementsPage() {
                   <td className="px-4 py-3"><span className="px-2 py-0.5 bg-chapel-400/10 text-chapel-400 font-body text-[0.65rem] font-bold rounded-full">{item.category || "General"}</span></td>
                   <td className="px-4 py-3"><span className={cn("px-2 py-0.5 font-body text-[0.65rem] font-bold rounded-full", item.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>{item.isActive ? "Yes" : "No"}</span></td>
                   <td className="px-4 py-3 font-body text-xs text-text-muted">{item.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || "-"}</td>
-                  <td className="px-4 py-3 flex gap-1"><button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={14} /></button><button onClick={() => handleDelete(item.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
+                  <td className="px-4 py-3 flex gap-1"><button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={14} /></button><button onClick={() => confirmDelete(item.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Delete Announcement"
+        message="Are you sure you want to delete this announcement?"
+        confirmText="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

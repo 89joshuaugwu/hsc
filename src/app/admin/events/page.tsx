@@ -8,6 +8,7 @@ import { Plus, Edit2, Trash2, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/upload/ImageUpload";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface EventItem { id: string; title: string; description: string; category: string; startDate: { toDate: () => Date } | null; endDate: { toDate: () => Date } | null; location: string; coverImageUrl: string; coverImagePublicId?: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; createdAt: { toDate: () => Date }; }
 type FormData = { title: string; description: string; category: string; startDate: string; endDate: string; location: string; coverImageUrl: string; coverImagePublicId: string; isFeatured: boolean; requiresRegistration: boolean; registrationUrl: string; isActive: boolean; };
@@ -19,6 +20,7 @@ export default function AdminEventsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all");
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null; publicId?: string }>({ isOpen: false, id: null });
   const { register, handleSubmit, reset, setValue, watch } = useForm<FormData>({ defaultValues: { isActive: true, isFeatured: false, requiresRegistration: false } });
   const reqReg = watch("requiresRegistration");
 
@@ -63,8 +65,10 @@ export default function AdminEventsPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string, publicId?: string) => {
-    if (!confirm("Delete this event?")) return;
+  const confirmDelete = (id: string, publicId?: string) => setConfirmData({ isOpen: true, id, publicId });
+  const handleDelete = async () => {
+    const { id, publicId } = confirmData;
+    if (!id) return;
     try { 
       if (publicId) {
         await fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId }) });
@@ -72,7 +76,7 @@ export default function AdminEventsPage() {
       await deleteDoc(doc(db, "events", id)); 
       setItems((p) => p.filter((i) => i.id !== id)); 
       toast.success("Deleted."); 
-    } catch { toast.error("Delete failed."); }
+    } catch { toast.error("Delete failed."); } finally { setConfirmData({ isOpen: false, id: null }); }
   };
 
   return (
@@ -136,13 +140,22 @@ export default function AdminEventsPage() {
                   <td className="px-4 py-3"><span className="px-2 py-0.5 bg-chapel-400/10 text-chapel-400 font-body text-[0.65rem] font-bold rounded-full">{item.category}</span></td>
                   <td className="px-4 py-3 font-body text-xs text-text-muted">{item.location || "-"}</td>
                   <td className="px-4 py-3"><span className={cn("px-2 py-0.5 font-body text-[0.65rem] font-bold rounded-full", item.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>{item.isActive ? "Yes" : "No"}</span></td>
-                  <td className="px-4 py-3 flex gap-1"><button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={14} /></button><button onClick={() => handleDelete(item.id, item.coverImagePublicId)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
+                  <td className="px-4 py-3 flex gap-1"><button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={14} /></button><button onClick={() => confirmDelete(item.id, item.coverImagePublicId)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Delete Event"
+        message="Are you sure you want to delete this event?"
+        confirmText="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

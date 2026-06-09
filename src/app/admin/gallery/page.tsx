@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { GalleryUpload } from "@/components/admin/upload/GalleryUpload";
 import { motion, AnimatePresence } from "framer-motion";
 import type { GalleryAlbum, GalleryImage } from "@/types/chapel.types";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 const CATS = ["community", "worship", "youth", "architecture", "events"];
 
@@ -32,6 +33,10 @@ export default function AdminGalleryAlbumsPage() {
   const [editCategory, setEditCategory] = useState("");
   const [editImages, setEditImages] = useState<GalleryImage[]>([]);
 
+  // Modals
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
+  const [migrateModalOpen, setMigrateModalOpen] = useState(false);
+
   // Migrating
   const [isMigrating, setIsMigrating] = useState(false);
 
@@ -46,8 +51,8 @@ export default function AdminGalleryAlbumsPage() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const confirmMigrate = () => setMigrateModalOpen(true);
   const handleMigrate = async () => {
-    if (!confirm("Run one-time migration from gallery -> gallery_albums?")) return;
     setIsMigrating(true);
     try {
       const oldSnap = await getDocs(collection(db, "gallery"));
@@ -79,6 +84,7 @@ export default function AdminGalleryAlbumsPage() {
       console.error(e);
     } finally {
       setIsMigrating(false);
+      setMigrateModalOpen(false);
     }
   };
 
@@ -155,14 +161,18 @@ export default function AdminGalleryAlbumsPage() {
     }
   };
 
-  const handleDeleteAlbum = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this entire album?")) return;
+  const confirmDeleteAlbum = (id: string) => setConfirmData({ isOpen: true, id });
+  const handleDeleteAlbum = async () => {
+    const id = confirmData.id;
+    if (!id) return;
     try {
       await deleteDoc(doc(db, "gallery_albums", id));
       toast.success("Album deleted.");
       fetchAll();
     } catch {
       toast.error("Failed to delete album.");
+    } finally {
+      setConfirmData({ isOpen: false, id: null });
     }
   };
 
@@ -170,7 +180,7 @@ export default function AdminGalleryAlbumsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="font-heading text-xl font-bold text-navy-500">Gallery Albums</h2>
-        <button onClick={handleMigrate} disabled={isMigrating} className="px-4 py-2 bg-amber-100 text-amber-700 font-bold rounded-lg hover:bg-amber-200 transition-colors text-sm">
+        <button onClick={confirmMigrate} disabled={isMigrating} className="px-4 py-2 bg-amber-100 text-amber-700 font-bold rounded-lg hover:bg-amber-200 transition-colors text-sm">
           {isMigrating ? "Migrating..." : "Migrate Old Gallery"}
         </button>
       </div>
@@ -260,7 +270,7 @@ export default function AdminGalleryAlbumsPage() {
                   
                   <div className="flex gap-2 mt-auto pt-4 border-t border-border/40">
                     <button onClick={() => startEdit(album)} className="flex-1 py-2 bg-ivory text-navy-500 rounded-lg font-bold text-sm hover:bg-chapel-50 transition-colors flex items-center justify-center gap-1.5"><Edit2 size={14}/> Edit</button>
-                    <button onClick={() => handleDeleteAlbum(album.id)} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg font-bold text-sm hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"><Trash2 size={14}/> Delete</button>
+                    <button onClick={() => confirmDeleteAlbum(album.id)} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg font-bold text-sm hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5"><Trash2 size={14}/> Delete</button>
                   </div>
                 </div>
               </div>
@@ -341,6 +351,26 @@ export default function AdminGalleryAlbumsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Delete Album"
+        message="Are you sure you want to delete this entire album? This cannot be undone."
+        confirmText="Delete"
+        onConfirm={handleDeleteAlbum}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
+
+      <ConfirmModal
+        isOpen={migrateModalOpen}
+        title="Migrate Old Gallery"
+        message="Run one-time migration from old gallery to new gallery_albums? This will copy old data into the new structure."
+        confirmText="Migrate"
+        isDestructive={false}
+        isLoading={isMigrating}
+        onConfirm={handleMigrate}
+        onCancel={() => setMigrateModalOpen(false)}
+      />
     </div>
   );
 }

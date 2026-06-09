@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LiveActivity } from "@/types/chapel.types";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 export default function AdminLivePage() {
   const { isLive, liveStatus } = useLiveStatus();
@@ -37,6 +38,7 @@ export default function AdminLivePage() {
   const [processing, setProcessing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const { register, handleSubmit, reset, setValue } = useForm<{
     name: string;
@@ -149,13 +151,17 @@ export default function AdminLivePage() {
     setShowForm(true);
   };
 
-  const handleDeleteActivity = async (id: string) => {
-    if (!confirm("Delete this activity preset?")) return;
+  const confirmDelete = (id: string) => setConfirmData({ isOpen: true, id });
+  const handleDeleteActivity = async () => {
+    const id = confirmData.id;
+    if (!id) return;
     try {
       await deleteDoc(doc(db, "live_activities", id));
       setActivities((prev) => prev.filter((a) => a.id !== id));
     } catch (error) {
       console.error("Delete activity error:", error);
+    } finally {
+      setConfirmData({ isOpen: false, id: null });
     }
   };
 
@@ -343,7 +349,7 @@ export default function AdminLivePage() {
                     <Edit2 size={14} />
                   </button>
                   <button
-                    onClick={() => handleDeleteActivity(activity.id)}
+                    onClick={() => confirmDelete(activity.id)}
                     className="p-2 rounded-lg text-text-light hover:text-red-500 hover:bg-red-50 transition-colors"
                   >
                     <Trash2 size={14} />
@@ -354,6 +360,15 @@ export default function AdminLivePage() {
           )}
         </div>
       </div>
+      
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Delete Activity Preset"
+        message="Are you sure you want to delete this activity preset?"
+        confirmText="Delete"
+        onConfirm={handleDeleteActivity}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

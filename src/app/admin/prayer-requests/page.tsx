@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { Trash2, Lock, Eye, X as XIcon, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface Prayer { id: string; name: string; email: string; topic: string; request: string; isPrivate: boolean; createdAt: { toDate: () => Date }; }
 
@@ -14,6 +15,7 @@ export default function AdminPrayerRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState<Prayer | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const fetchAll = async () => {
     try {
@@ -25,9 +27,11 @@ export default function AdminPrayerRequestsPage() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this prayer request? This is sensitive data.")) return;
-    try { await deleteDoc(doc(db, "prayer_requests", id)); setItems((p) => p.filter((i) => i.id !== id)); setViewing(null); toast.success("Deleted."); } catch { toast.error("Failed."); }
+  const confirmDelete = (id: string) => setConfirmData({ isOpen: true, id });
+  const handleDelete = async () => {
+    const id = confirmData.id;
+    if (!id) return;
+    try { await deleteDoc(doc(db, "prayer_requests", id)); setItems((p) => p.filter((i) => i.id !== id)); setViewing(null); toast.success("Deleted."); } catch { toast.error("Failed."); } finally { setConfirmData({ isOpen: false, id: null }); }
   };
 
   return (
@@ -62,7 +66,7 @@ export default function AdminPrayerRequestsPage() {
                   <td className="px-4 py-3 font-body text-xs text-text-muted">{pr.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || "-"}</td>
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => setViewing(pr)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Eye size={14} /></button>
-                    <button onClick={() => handleDelete(pr.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
+                    <button onClick={() => confirmDelete(pr.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
                   </td>
                 </tr>
               ))}
@@ -97,11 +101,20 @@ export default function AdminPrayerRequestsPage() {
               <p className="font-body text-sm text-text whitespace-pre-wrap">{viewing.request}</p>
             )}
             <div className="flex justify-end">
-              <button onClick={() => handleDelete(viewing.id)} className="inline-flex items-center gap-1 px-4 py-2 bg-red-50 text-red-500 font-body text-xs font-bold rounded-lg hover:bg-red-100"><Trash2 size={12} />Delete</button>
+              <button onClick={() => confirmDelete(viewing.id)} className="inline-flex items-center gap-1 px-4 py-2 bg-red-50 text-red-500 font-body text-xs font-bold rounded-lg hover:bg-red-100"><Trash2 size={12} />Delete</button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Delete Prayer Request"
+        message="Are you sure you want to delete this prayer request? This is sensitive data."
+        confirmText="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

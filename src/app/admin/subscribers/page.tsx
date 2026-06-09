@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { Trash2, Send, Loader2, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface Sub { id: string; name: string; email: string; source: string; isActive: boolean; createdAt: { toDate: () => Date }; }
 
@@ -19,6 +20,7 @@ export default function AdminSubscribersPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState("");
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   const fetchAll = async () => {
     try {
@@ -38,9 +40,11 @@ export default function AdminSubscribersPage() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Remove this subscriber?")) return;
-    try { await deleteDoc(doc(db, "subscribers", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Removed."); } catch { toast.error("Failed."); }
+  const confirmDelete = (id: string) => setConfirmData({ isOpen: true, id });
+  const handleDelete = async () => {
+    const id = confirmData.id;
+    if (!id) return;
+    try { await deleteDoc(doc(db, "subscribers", id)); setItems((p) => p.filter((i) => i.id !== id)); toast.success("Removed."); } catch { toast.error("Failed."); } finally { setConfirmData({ isOpen: false, id: null }); }
   };
 
   const handleSend = async () => {
@@ -121,13 +125,21 @@ export default function AdminSubscribersPage() {
                   <td className="px-4 py-3"><span className="px-2 py-0.5 bg-ivory-dark font-body text-[0.65rem] font-bold rounded-full">{s.source || "website"}</span></td>
                   <td className="px-4 py-3 font-body text-xs text-text-muted">{s.createdAt?.toDate?.()?.toLocaleDateString("en-NG") || "-"}</td>
                   <td className="px-4 py-3"><span className={cn("px-2 py-0.5 font-body text-[0.65rem] font-bold rounded-full", s.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600")}>{s.isActive ? "Yes" : "No"}</span></td>
-                  <td className="px-4 py-3"><button onClick={() => handleDelete(s.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
+                  <td className="px-4 py-3"><button onClick={() => confirmDelete(s.id)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={14} /></button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Remove Subscriber"
+        message="Are you sure you want to remove this subscriber?"
+        confirmText="Remove"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

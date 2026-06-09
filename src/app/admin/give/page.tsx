@@ -9,6 +9,7 @@ import { Plus, Edit2, Trash2, X, Loader2, ArrowUp, ArrowDown } from "lucide-reac
 import { cn, slugify } from "@/lib/utils";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/upload/ImageUpload";
+import { ConfirmModal } from "@/components/admin/ConfirmModal";
 
 interface GiveOption { id: string; title: string; slug: string; description: string; coverImageUrl: string; coverImagePublicId?: string; goalAmount: number | null; totalReceived: number; paystackEnabled: boolean; bankTransferEnabled: boolean; bankAccounts: { bankName: string; accountNumber: string; accountName: string; }[]; sortOrder: number; isActive: boolean; }
 type FormData = { title: string; slug: string; description: string; coverImageUrl: string; coverImagePublicId: string; goalAmount: number | null; paystackEnabled: boolean; bankTransferEnabled: boolean; bankAccounts: { bankName: string; accountNumber: string; accountName: string; }[]; isActive: boolean; };
@@ -19,6 +20,7 @@ export default function AdminGivePage() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null; publicId?: string }>({ isOpen: false, id: null });
   
   const { register, handleSubmit, reset, setValue, control, watch } = useForm<FormData>({ 
     defaultValues: { isActive: true, paystackEnabled: true, bankTransferEnabled: true, bankAccounts: [{ bankName: "", accountNumber: "", accountName: "" }], coverImageUrl: "", coverImagePublicId: "" } 
@@ -96,8 +98,10 @@ export default function AdminGivePage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string, publicId?: string) => {
-    if (!confirm("Delete this give option? This cannot be undone.")) return;
+  const confirmDelete = (id: string, publicId?: string) => setConfirmData({ isOpen: true, id, publicId });
+  const handleDelete = async () => {
+    const { id, publicId } = confirmData;
+    if (!id) return;
     try { 
       if (publicId) {
         await fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId }) });
@@ -105,7 +109,7 @@ export default function AdminGivePage() {
       await deleteDoc(doc(db, "give_options", id)); 
       setItems((p) => p.filter((i) => i.id !== id)); 
       toast.success("Deleted."); 
-    } catch { toast.error("Delete failed."); }
+    } catch { toast.error("Delete failed."); } finally { setConfirmData({ isOpen: false, id: null }); }
   };
 
   const handleReorder = async (id: string, dir: "up" | "down") => {
@@ -255,13 +259,22 @@ export default function AdminGivePage() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(item)} className="p-1.5 rounded text-text-light hover:text-chapel-400 hover:bg-chapel-50"><Edit2 size={16} /></button>
-                  <button onClick={() => handleDelete(item.id, item.coverImagePublicId)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={16} /></button>
+                  <button onClick={() => confirmDelete(item.id, item.coverImagePublicId)} className="p-1.5 rounded text-text-light hover:text-red-500 hover:bg-red-50"><Trash2 size={16} /></button>
                 </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmData.isOpen}
+        title="Delete Give Option"
+        message="Are you sure you want to delete this give option? This cannot be undone."
+        confirmText="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmData({ isOpen: false, id: null })}
+      />
     </div>
   );
 }
