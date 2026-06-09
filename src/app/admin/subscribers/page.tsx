@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, deleteDoc, doc, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Trash2, Send, Loader2, X as XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ export default function AdminSubscribersPage() {
 
   const fetchAll = async () => {
     try {
-      const q = query(collection(db, "subscribers"), orderBy("createdAt", "desc"));
+      const q = query(collection(db, "subscribers"), orderBy("createdAt", "desc"), limit(500));
       const snap = await getDocs(q);
       setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Sub));
     } catch (e) { console.error(e); } finally { setLoading(false); }

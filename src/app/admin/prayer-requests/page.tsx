@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, getDocs, deleteDoc, doc, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Trash2, Lock, Eye, X as XIcon, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ export default function AdminPrayerRequestsPage() {
 
   const fetchAll = async () => {
     try {
-      const q = query(collection(db, "prayer_requests"), orderBy("createdAt", "desc"));
+      const q = query(collection(db, "prayer_requests"), orderBy("createdAt", "desc"), limit(500));
       const snap = await getDocs(q);
       setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Prayer));
     } catch (e) { console.error(e); } finally { setLoading(false); }

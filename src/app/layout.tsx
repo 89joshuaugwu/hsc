@@ -47,6 +47,8 @@ const cormorantGaramond = Cormorant_Garamond({
    Metadata — SEO + Favicon
    ============================================= */
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hscesut.vercel.app";
+
 export const metadata: Metadata = {
   title: {
     default: "Holy Spirit Chapel ESUT Agbani",
@@ -73,8 +75,16 @@ export const metadata: Metadata = {
     title: "Holy Spirit Chapel ESUT Agbani",
     description:
       "A vibrant Anglican community of faith, worship, and fellowship at Enugu State University of Technology.",
-    url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    url: BASE_URL,
     siteName: "Holy Spirit Chapel ESUT Agbani",
+    images: [
+      {
+        url: "/clogo.png",
+        width: 800,
+        height: 600,
+        alt: "Holy Spirit Chapel ESUT",
+      },
+    ],
     locale: "en_NG",
     type: "website",
   },
@@ -83,10 +93,9 @@ export const metadata: Metadata = {
     title: "Holy Spirit Chapel ESUT Agbani",
     description:
       "A vibrant Anglican community of faith, worship, and fellowship at ESUT.",
+    images: ["/clogo.png"],
   },
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  ),
+  metadataBase: new URL(BASE_URL),
 };
 
 /* =============================================

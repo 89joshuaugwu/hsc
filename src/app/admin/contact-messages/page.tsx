@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, updateDoc, deleteDoc, doc, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Trash2, Mail, MailOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ export default function AdminContactMessagesPage() {
   const [confirmData, setConfirmData] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   useEffect(() => {
-    const q = query(collection(db, "contact_messages"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "contact_messages"), orderBy("createdAt", "desc"), limit(500));
     const unsub = onSnapshot(q, (snap) => {
       setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Msg));
       setLoading(false);
