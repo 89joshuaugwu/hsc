@@ -69,7 +69,7 @@ export default function AdminSubscribersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-border/60 p-4 text-center"><p className="font-body text-2xl font-bold text-navy-500">{items.length}</p><p className="font-body text-xs text-text-muted">Total</p></div>
         <div className="bg-white rounded-xl border border-border/60 p-4 text-center"><p className="font-body text-2xl font-bold text-green-600">{active.length}</p><p className="font-body text-xs text-text-muted">Active</p></div>
         <div className="bg-white rounded-xl border border-border/60 p-4 text-center"><p className="font-body text-2xl font-bold text-chapel-400">{thisMonth.length}</p><p className="font-body text-xs text-text-muted">This Month</p></div>
