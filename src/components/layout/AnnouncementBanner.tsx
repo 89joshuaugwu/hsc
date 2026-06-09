@@ -37,11 +37,11 @@ export function AnnouncementBanner() {
     fetchAnnouncements();
   }, []);
 
-  // Toggle visibility every 1 minute
+  // Toggle visibility every 2 minute
   useEffect(() => {
     const interval = setInterval(() => {
       setIsVisible((prev) => !prev);
-    }, 60000); // 1 minute
+    }, 120000); // 2 minute
     return () => clearInterval(interval);
   }, []);
 
