@@ -95,6 +95,9 @@ export const metadata: Metadata = {
       "A vibrant Anglican community of faith, worship, and fellowship at ESUT.",
     images: ["/clogo.png"],
   },
+  verification: {
+    google: "F3WW92_FNlQviz77sKTnTL-EnbLbWuh0P1snZC5e72o",
+  },
   metadataBase: new URL(BASE_URL),
 };
 

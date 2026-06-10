@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-
+import { rateLimit } from "@/lib/rateLimit";
 
 /**
  * POST /api/give/initiate
@@ -13,6 +13,10 @@ import { FieldValue } from "firebase-admin/firestore";
  *         amount, method, paystackReference?, screenshotUrl?, screenshotPublicId? }
  */
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  if (!rateLimit(ip, 5, 60000)) {
+    return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const {
