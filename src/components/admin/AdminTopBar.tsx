@@ -22,8 +22,10 @@ import {
   Mail,
   Heart,
   Settings,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HelpModal } from "./HelpModal";
 
 const MOBILE_NAV = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -38,6 +40,7 @@ const MOBILE_NAV = [
   { label: "Messages", href: "/admin/contact-messages", icon: Mail },
   { label: "Prayers", href: "/admin/prayer-requests", icon: Heart },
   { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Help & Guide", href: "/admin/admin-guide", icon: HelpCircle },
 ];
 
 interface AdminTopBarProps {
@@ -51,6 +54,7 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const pageTitle = (() => {
     const segment = pathname.split("/").filter(Boolean).pop() || "admin";
@@ -88,6 +92,14 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
 
         {/* Right: notifications + user */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsHelpOpen(true)}
+            className="p-2 rounded-full text-text-muted hover:text-chapel-400 hover:bg-ivory transition-colors"
+            title="Help & Guide"
+          >
+            <HelpCircle size={20} />
+          </button>
+
           <button className="relative p-2 rounded-lg text-text-muted hover:text-navy-500 hover:bg-ivory transition-colors">
             <Bell size={18} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-live rounded-full" />
@@ -156,6 +168,9 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
           </div>
         </>
       )}
+
+      {/* Help Modal */}
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </>
   );
 }

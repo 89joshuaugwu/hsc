@@ -19,6 +19,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
   { label: "Messages", href: "/admin/contact-messages", icon: Mail },
   { label: "Prayer Requests", href: "/admin/prayer-requests", icon: Heart },
   { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Help & Guide", href: "/admin/admin-guide", icon: HelpCircle },
 ];
 
 /**
