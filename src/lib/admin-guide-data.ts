@@ -6,7 +6,7 @@ import {
   Users,
   Image as ImageIcon,
   CreditCard,
-  BanknotesIcon,
+  BanknoteIcon,
   UserCheck,
   Mail,
   Heart,
@@ -360,7 +360,7 @@ export const ADMIN_HELP_DATA: HelpSection[] = [
   {
     id: "payments",
     title: "Payments",
-    icon: BanknotesIcon, // we can use CreditCard or similar
+    icon: BanknoteIcon, // we can use CreditCard or similar
     path: "/admin/payments",
     content: [
       {
