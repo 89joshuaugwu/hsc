@@ -44,11 +44,38 @@ function WhatsAppIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+function TikTokIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.48a8.2 8.2 0 004.77 1.52V7.56a4.84 4.84 0 01-1-.87z" />
+    </svg>
+  );
+}
+
+function YouTubeIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  );
+}
+
+function ThreadsIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.186 24h-.007C5.461 23.956.057 18.529.006 11.806c-.003-.438.029-.879.087-1.313C.676 5.506 5.04 1.18 10.027.096c.544-.118 1.096-.053 1.553.178.458.232.817.622 1.005 1.1a1.69 1.69 0 01-.77 2.099 1.67 1.67 0 01-1.21.14 6.33 6.33 0 00-7.284 5.053 6.323 6.323 0 005.037 7.394 6.302 6.302 0 005.55-1.507 6.3 6.3 0 002.052-4.322 1.686 1.686 0 013.365.16c-.054.91-.24 1.807-.556 2.66a9.681 9.681 0 01-6.583 6.449Z" />
+    </svg>
+  );
+}
+
 /* ─── Social icon component map ─── */
 const socialIconMap: Record<string, React.FC<{ size?: number }>> = {
   facebook: FacebookIcon,
   instagram: InstagramIcon,
+  tiktok: TikTokIcon,
+  youtube: YouTubeIcon,
   twitter: TwitterIcon,
+  threads: ThreadsIcon,
   whatsapp: WhatsAppIcon,
 };
 
@@ -110,8 +137,17 @@ export function Footer() {
           if (data.socials?.instagram) {
             links.push({ icon: InstagramIcon, href: data.socials.instagram, label: "Instagram" });
           }
+          if (data.socials?.tiktok) {
+            links.push({ icon: TikTokIcon, href: data.socials.tiktok, label: "TikTok" });
+          }
+          if (data.socials?.youtube) {
+            links.push({ icon: YouTubeIcon, href: data.socials.youtube, label: "YouTube" });
+          }
           if (data.socials?.twitter) {
             links.push({ icon: TwitterIcon, href: data.socials.twitter, label: "Twitter" });
+          }
+          if (data.socials?.threads) {
+            links.push({ icon: ThreadsIcon, href: data.socials.threads, label: "Threads" });
           }
           if (data.socials?.whatsapp) {
             links.push({

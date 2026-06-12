@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { sendEmail } from "@/lib/nodemailer";
+import { subscriberBroadcast } from "@/lib/email-templates/subscriberBroadcast";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,22 +24,13 @@ export async function POST(req: NextRequest) {
     let sent = 0;
     for (const sub of subscribers) {
       try {
-        await sendEmail({
-          to: sub.email,
+        const email = subscriberBroadcast({
+          name: sub.name,
           subject,
-          html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;">
-            <div style="text-align:center;padding:16px;background:linear-gradient(135deg,#0A2D52,#1E9FD8);border-radius:12px;">
-              <h2 style="color:#F0B429;margin:0;">HOLY SPIRIT CHAPEL</h2>
-            </div>
-            <div style="margin-top:20px;">
-              <p>Dear ${sub.name},</p>
-              <div style="margin:16px 0;">${message.replace(/\n/g, "<br/>")}</div>
-              <hr style="border:1px solid #eee;margin:24px 0;"/>
-              <p style="color:#94A3B8;font-size:11px;">Holy Spirit Chapel, ESUT Agbani</p>
-              <p style="font-size:10px;color:#CBD5E1;"><a href="${appUrl}/api/unsubscribe/${sub.unsubscribeToken}" style="color:#94A3B8;">Unsubscribe</a></p>
-            </div>
-          </div>`,
+          message,
+          unsubscribeUrl: `${appUrl}/api/unsubscribe/${sub.unsubscribeToken}`,
         });
+        await sendEmail({ to: sub.email, subject: email.subject, html: email.html });
         sent++;
       } catch { /* continue to next */ }
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
+import { subscribeWelcome } from "@/lib/email-templates/subscribeWelcome";
 import crypto from "crypto";
 import { rateLimit } from "@/lib/rateLimit";
 
@@ -35,7 +36,11 @@ export async function POST(req: NextRequest) {
 
     try {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-      await sendEmail({ to: email, subject: "Welcome to the Holy Spirit Chapel family!", html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;"><div style="text-align:center;padding:16px;background:linear-gradient(135deg,#0A2D52,#1E9FD8);border-radius:12px;"><h2 style="color:#F0B429;margin:0;">HOLY SPIRIT CHAPEL</h2></div><p style="margin-top:20px;">Dear ${name},</p><p>Welcome! You&apos;re now part of our community. You&apos;ll receive updates on events, announcements, and more.</p><p style="color:#94A3B8;font-size:11px;margin-top:30px;"><a href="${appUrl}/api/unsubscribe/${token}">Unsubscribe</a></p></div>` });
+      const welcomeEmail = subscribeWelcome({
+        name,
+        unsubscribeUrl: `${appUrl}/api/unsubscribe/${token}`,
+      });
+      await sendEmail({ to: email, subject: welcomeEmail.subject, html: welcomeEmail.html });
     } catch (emailError) {
       console.error("Welcome email failed (non-fatal):", emailError);
     }

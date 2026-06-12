@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
+import { prayerAdminNotification } from "@/lib/email-templates/prayerAdminNotification";
+import { prayerUserConfirmation } from "@/lib/email-templates/prayerUserConfirmation";
 import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
@@ -25,10 +27,19 @@ export async function POST(req: NextRequest) {
       const prayerEmail = settingsSnap.exists ? settingsSnap.data()?.prayerEmail : null;
 
       if (prayerEmail) {
-        await sendEmail({ to: prayerEmail, subject: `Prayer Request from ${name}${isPrivate ? " [PRIVATE]" : ""}`, html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;"><h2 style="color:#0A2D52;">New Prayer Request${isPrivate ? " 🔒" : ""}</h2><p><strong>From:</strong> ${name} (${email})</p><p><strong>Topic:</strong> ${topic || "N/A"}</p><hr/><p>${request.replace(/\n/g, "<br/>")}</p></div>` });
+        const adminEmail = prayerAdminNotification({
+          name,
+          email,
+          topic: topic || "",
+          request,
+          isPrivate: isPrivate || false,
+          date: new Date().toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+        });
+        await sendEmail({ to: prayerEmail, subject: adminEmail.subject, html: adminEmail.html });
       }
 
-      await sendEmail({ to: email, subject: "Your prayer has been received | Holy Spirit Chapel", html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;text-align:center;"><div style="padding:16px;background:linear-gradient(135deg,#0A2D52,#1E9FD8);border-radius:12px;"><h2 style="color:#F0B429;margin:0;">HOLY SPIRIT CHAPEL</h2></div><p style="margin-top:20px;">Dear ${name},</p><p>Your prayer request has been received. Our prayer team will intercede for you.</p><p style="font-style:italic;color:#64748B;">"The prayer of a righteous person is powerful and effective." — James 5:16</p></div>` });
+      const userConfirm = prayerUserConfirmation({ name });
+      await sendEmail({ to: email, subject: userConfirm.subject, html: userConfirm.html });
     } catch (emailError) {
       console.error("Email failed (non-fatal):", emailError);
     }

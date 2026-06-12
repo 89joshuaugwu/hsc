@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
-import { paymentReceiptEmail } from "@/lib/email-templates";
+import { paymentReceiptVerified } from "@/lib/email-templates/paymentReceiptVerified";
 import { formatNaira } from "@/lib/utils";
 import crypto from "crypto";
 
@@ -77,10 +77,11 @@ export async function POST(req: NextRequest) {
 
     // 5. Send receipt email
     try {
-      const { subject, html } = paymentReceiptEmail({
+      const { subject, html } = paymentReceiptVerified({
         name: txData.donorName,
         amount: formatNaira(txData.amount),
         giveTitle: txData.giveOptionTitle,
+        method: "paystack",
         reference,
         date: new Date().toLocaleDateString("en-NG", {
           year: "numeric",

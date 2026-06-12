@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { sendEmail } from "@/lib/nodemailer";
+import { contactAdminNotification } from "@/lib/email-templates/contactAdminNotification";
+import { contactUserAutoReply } from "@/lib/email-templates/contactUserAutoReply";
 import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
@@ -25,10 +27,18 @@ export async function POST(req: NextRequest) {
       const contactEmails = settingsSnap.exists ? settingsSnap.data()?.contactEmails || [] : [];
 
       if (contactEmails.length > 0) {
-        await sendEmail({ to: contactEmails.join(", "), subject: `New Message from ${name}`, html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;"><h2 style="color:#0A2D52;">New Contact Message</h2><p><strong>From:</strong> ${name} (${email})</p><p><strong>Subject:</strong> ${subject}</p><hr style="border:1px solid #eee;"/><p>${message.replace(/\n/g, "<br/>")}</p></div>` });
+        const adminEmail = contactAdminNotification({
+          name,
+          email,
+          subject: subject || "General",
+          message,
+          date: new Date().toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }),
+        });
+        await sendEmail({ to: contactEmails.join(", "), subject: adminEmail.subject, html: adminEmail.html });
       }
 
-      await sendEmail({ to: email, subject: "We received your message | Holy Spirit Chapel", html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;"><div style="text-align:center;padding:16px;background:linear-gradient(135deg,#0A2D52,#1E9FD8);border-radius:12px;"><h2 style="color:#F0B429;margin:0;">HOLY SPIRIT CHAPEL</h2></div><p style="margin-top:20px;">Dear ${name},</p><p>Thank you for reaching out! We&apos;ve received your message and will respond within 24 hours.</p><p style="color:#94A3B8;font-size:12px;">— Holy Spirit Chapel, ESUT Agbani</p></div>` });
+      const userReply = contactUserAutoReply({ name, subject: subject || "General", message });
+      await sendEmail({ to: email, subject: userReply.subject, html: userReply.html });
     } catch (emailError) {
       console.error("Email failed (non-fatal):", emailError);
     }
