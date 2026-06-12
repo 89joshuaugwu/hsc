@@ -34,9 +34,6 @@ interface SettingsForm {
     instagram: string;
     twitter: string;
     whatsapp: string;
-    youtube: string;
-    tiktok: string;
-    linkedin: string;
   };
   serviceTimes: { label: string; day: string; time: string }[];
   heroImages: { url: string; publicId: string; order: number }[];
@@ -71,7 +68,7 @@ export default function AdminSettingsPage() {
       address: "",
       phones: [{ value: "" }],
       email: "",
-      socials: { facebook: "", instagram: "", twitter: "", whatsapp: "", youtube: "", tiktok: "", linkedin: "" },
+      socials: { facebook: "", instagram: "", twitter: "", whatsapp: "" },
       serviceTimes: [{ label: "", day: "", time: "" }],
       heroImages: [],
       fellowshipImages: [],
@@ -119,7 +116,7 @@ export default function AdminSettingsPage() {
             address: d.address || "",
             phones: (d.phone || [""]).map((p: string) => ({ value: p })),
             email: d.email || "",
-            socials: d.socials || { facebook: "", instagram: "", twitter: "", whatsapp: "", youtube: "", tiktok: "", linkedin: "" },
+            socials: d.socials || { facebook: "", instagram: "", twitter: "", whatsapp: "" },
             serviceTimes: d.serviceTimes || [{ label: "", day: "", time: "" }],
             heroImages: d.heroImages || (d.heroImageUrl ? [{ url: d.heroImageUrl, publicId: d.heroImagePublicId || "", order: 0 }] : []),
             fellowshipImages: d.fellowshipImages || [],
@@ -357,13 +354,10 @@ export default function AdminSettingsPage() {
           {/* Social Links */}
           <div>
             <label className="block font-body text-xs font-semibold text-text-muted mb-2">Social Media</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <input {...chapelForm.register("socials.facebook")} placeholder="Facebook URL" className="px-3 py-2 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
               <input {...chapelForm.register("socials.instagram")} placeholder="Instagram URL" className="px-3 py-2 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
               <input {...chapelForm.register("socials.twitter")} placeholder="X/Twitter URL" className="px-3 py-2 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-              <input {...chapelForm.register("socials.youtube")} placeholder="YouTube URL" className="px-3 py-2 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-              <input {...chapelForm.register("socials.tiktok")} placeholder="TikTok URL" className="px-3 py-2 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
-              <input {...chapelForm.register("socials.linkedin")} placeholder="LinkedIn URL" className="px-3 py-2 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
               <input {...chapelForm.register("socials.whatsapp")} placeholder="WhatsApp number" className="px-3 py-2 rounded-lg border border-border font-body text-sm focus:outline-none focus:ring-2 focus:ring-chapel-400/30" />
             </div>
           </div>

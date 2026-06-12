@@ -18,9 +18,6 @@ export interface Socials {
   instagram?: string;
   twitter?: string;
   whatsapp?: string;
-  youtube?: string;
-  tiktok?: string;
-  linkedin?: string;
 }
 
 
