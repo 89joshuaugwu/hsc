@@ -28,6 +28,9 @@ export default function AdminLayout({
   const publicRoutes = ["/admin/login", "/admin/verify-2fa"];
   const isPublicRoute = publicRoutes.includes(pathname);
 
+  // Hook must be called unconditionally (React rules of hooks)
+  const notifications = useAdminNotifications();
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -63,8 +66,6 @@ export default function AdminLayout({
   }
 
   // Authenticated admin layout
-  const notifications = useAdminNotifications();
-
   return (
     <div className="min-h-screen bg-ivory flex">
       {/* Sidebar (desktop) */}
