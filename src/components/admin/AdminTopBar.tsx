@@ -9,7 +9,6 @@ import {
   Menu,
   X,
   LogOut,
-  Bell,
   LayoutDashboard,
   Radio,
   Megaphone,
@@ -26,6 +25,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HelpModal } from "./HelpModal";
+import type { AdminNotifications } from "@/hooks/useAdminNotifications";
 
 const MOBILE_NAV = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -35,26 +35,30 @@ const MOBILE_NAV = [
   { label: "Departments", href: "/admin/departments", icon: Users },
   { label: "Gallery", href: "/admin/gallery", icon: ImageIcon },
   { label: "Give", href: "/admin/give", icon: Gift },
-  { label: "Payments", href: "/admin/payments", icon: CreditCard },
-  { label: "Subscribers", href: "/admin/subscribers", icon: UserCheck },
-  { label: "Messages", href: "/admin/contact-messages", icon: Mail },
-  { label: "Prayers", href: "/admin/prayer-requests", icon: Heart },
+  { label: "Payments", href: "/admin/payments", icon: CreditCard, badgeKey: "payments" as const },
+  { label: "Subscribers", href: "/admin/subscribers", icon: UserCheck, badgeKey: "subscribers" as const },
+  { label: "Messages", href: "/admin/contact-messages", icon: Mail, badgeKey: "messages" as const },
+  { label: "Prayers", href: "/admin/prayer-requests", icon: Heart, badgeKey: "prayers" as const },
   { label: "Settings", href: "/admin/settings", icon: Settings },
   { label: "Help & Guide", href: "/admin/admin-guide", icon: HelpCircle },
 ];
 
 interface AdminTopBarProps {
   user: User;
+  notifications?: AdminNotifications;
 }
 
 /**
  * AdminTopBar — Sticky top bar with mobile hamburger, page title, and user menu.
+ * Shows red notification dot on hamburger when there are pending items.
  */
-export function AdminTopBar({ user }: AdminTopBarProps) {
+export function AdminTopBar({ user, notifications }: AdminTopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  const totalCount = notifications?.total || 0;
 
   const pageTitle = (() => {
     const segment = pathname.split("/").filter(Boolean).pop() || "admin";
@@ -73,6 +77,11 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
     return pathname.startsWith(href);
   };
 
+  const getBadgeCount = (badgeKey?: "messages" | "prayers" | "payments" | "subscribers"): number => {
+    if (!badgeKey || !notifications) return 0;
+    return notifications[badgeKey] || 0;
+  };
+
   return (
     <>
       {/* Top bar */}
@@ -81,16 +90,22 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setMobileOpen(true)}
-            className="md:hidden text-navy-500 hover:text-navy-700"
+            className="relative md:hidden text-navy-500 hover:text-navy-700"
           >
             <Menu size={22} />
+            {/* Red dot when there are pending notifications */}
+            {totalCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                {totalCount > 9 ? "9+" : totalCount}
+              </span>
+            )}
           </button>
           <h1 className="font-heading text-lg font-bold text-navy-500 truncate">
             {pageTitle}
           </h1>
         </div>
 
-        {/* Right: notifications + user */}
+        {/* Right: help + user */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsHelpOpen(true)}
@@ -98,11 +113,6 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
             title="Help & Guide"
           >
             <HelpCircle size={20} />
-          </button>
-
-          <button className="relative p-2 rounded-lg text-text-muted hover:text-navy-500 hover:bg-ivory transition-colors">
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-live rounded-full" />
           </button>
 
           <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-border/60">
@@ -147,6 +157,7 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
               {MOBILE_NAV.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
+                const count = getBadgeCount(item.badgeKey);
                 return (
                   <Link
                     key={item.href}
@@ -160,7 +171,12 @@ export function AdminTopBar({ user }: AdminTopBarProps) {
                     )}
                   >
                     <Icon size={20} />
-                    <span>{item.label}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {count > 0 && (
+                      <span className="min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                        {count > 99 ? "99+" : count}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
