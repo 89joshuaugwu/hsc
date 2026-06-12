@@ -37,6 +37,7 @@ interface SettingsForm {
   };
   serviceTimes: { label: string; day: string; time: string }[];
   heroImages: { url: string; publicId: string; order: number }[];
+  fellowshipImages: { url: string; publicId: string; order: number }[];
   missionStatement: string;
   visionStatement: string;
   scriptureVerse: string;
@@ -70,6 +71,7 @@ export default function AdminSettingsPage() {
       socials: { facebook: "", instagram: "", twitter: "", whatsapp: "" },
       serviceTimes: [{ label: "", day: "", time: "" }],
       heroImages: [],
+      fellowshipImages: [],
       missionStatement: "",
       visionStatement: "",
       scriptureVerse: "",
@@ -85,6 +87,8 @@ export default function AdminSettingsPage() {
     useFieldArray({ control: chapelForm.control, name: "serviceTimes" });
   const { fields: heroImageFields, append: addHeroImage, remove: removeHeroImage, swap: swapHeroImage } =
     useFieldArray({ control: chapelForm.control, name: "heroImages" });
+  const { fields: fellowshipImageFields, append: addFellowshipImage, remove: removeFellowshipImage, swap: swapFellowshipImage } =
+    useFieldArray({ control: chapelForm.control, name: "fellowshipImages" });
 
   // Email form
   const emailForm = useForm<EmailConfigForm>({
@@ -115,6 +119,7 @@ export default function AdminSettingsPage() {
             socials: d.socials || { facebook: "", instagram: "", twitter: "", whatsapp: "" },
             serviceTimes: d.serviceTimes || [{ label: "", day: "", time: "" }],
             heroImages: d.heroImages || (d.heroImageUrl ? [{ url: d.heroImageUrl, publicId: d.heroImagePublicId || "", order: 0 }] : []),
+            fellowshipImages: d.fellowshipImages || [],
             missionStatement: d.missionStatement || "",
             visionStatement: d.visionStatement || "",
             scriptureVerse: d.scriptureVerse || "",
@@ -162,6 +167,7 @@ export default function AdminSettingsPage() {
           socials: data.socials,
           serviceTimes: data.serviceTimes,
           heroImages: data.heroImages.map((img, i) => ({ ...img, order: i })),
+          fellowshipImages: data.fellowshipImages.map((img, i) => ({ ...img, order: i })),
           missionStatement: data.missionStatement,
           visionStatement: data.visionStatement,
           scriptureVerse: data.scriptureVerse,
@@ -411,6 +417,43 @@ export default function AdminSettingsPage() {
             )}
             {heroImageFields.length === 0 && (
               <p className="font-body text-xs text-red-500 mt-2">At least 1 hero image is required.</p>
+            )}
+          </div>
+
+          {/* Fellowship Images */}
+          <div>
+            <label className="block font-body text-xs font-semibold text-text-muted mb-2">Fellowship Section Backgrounds (Max 5)</label>
+            <div className="space-y-3">
+              {fellowshipImageFields.map((field, idx) => (
+                <div key={field.id} className="flex items-center gap-3 bg-ivory/50 border border-border/40 p-2 rounded-lg">
+                  <div className="relative w-24 h-14 bg-ivory-dark rounded overflow-hidden">
+                    <Image src={chapelForm.watch(`fellowshipImages.${idx}.url`)} alt={`Fellowship ${idx + 1}`} fill className="object-cover" />
+                  </div>
+                  <div className="flex-1 font-body text-xs text-text-muted font-semibold">Image {idx + 1}</div>
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => swapFellowshipImage(idx, idx - 1)} disabled={idx === 0} className="p-1.5 rounded bg-white text-text-muted hover:text-chapel-400 disabled:opacity-30"><ArrowUp size={14}/></button>
+                    <button type="button" onClick={() => swapFellowshipImage(idx, idx + 1)} disabled={idx === fellowshipImageFields.length - 1} className="p-1.5 rounded bg-white text-text-muted hover:text-chapel-400 disabled:opacity-30"><ArrowDown size={14}/></button>
+                    <button type="button" onClick={() => {
+                      const publicId = chapelForm.getValues(`fellowshipImages.${idx}.publicId`);
+                      if (publicId) fetch("/api/upload", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicId }) });
+                      removeFellowshipImage(idx);
+                    }} className="p-1.5 rounded bg-white text-red-400 hover:text-red-600 ml-2"><Trash2 size={14}/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {fellowshipImageFields.length < 5 && (
+              <div className="mt-4">
+                <GalleryUpload 
+                  onUploadComplete={(items) => {
+                    const remaining = 5 - fellowshipImageFields.length;
+                    items.slice(0, remaining).forEach(item => {
+                      addFellowshipImage({ url: item.url, publicId: item.publicId, order: 0 });
+                    });
+                  }} 
+                />
+              </div>
             )}
           </div>
 

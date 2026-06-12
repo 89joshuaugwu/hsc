@@ -9,11 +9,13 @@ import { useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 
 export function FellowshipSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
-  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
+  const [images, setImages] = useState<{ url: string; publicId: string }[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     async function fetchChapelInfo() {
@@ -21,10 +23,8 @@ export function FellowshipSection() {
         const snap = await getDoc(doc(db, "chapel_info", "main"));
         if (snap.exists()) {
           const data = snap.data();
-          if (data.heroImages && data.heroImages.length > 0) {
-            setHeroImageUrl(data.heroImages[0].url);
-          } else if (data.heroImageUrl) {
-            setHeroImageUrl(data.heroImageUrl);
+          if (data.fellowshipImages && data.fellowshipImages.length > 0) {
+            setImages(data.fellowshipImages);
           }
         }
       } catch (err) {
@@ -33,6 +33,15 @@ export function FellowshipSection() {
     }
     fetchChapelInfo();
   }, []);
+
+  // Carousel effect
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [images.length]);
 
   return (
     <section ref={ref} className="py-16 md:py-20 bg-white">
@@ -43,37 +52,8 @@ export function FellowshipSection() {
           animate={isInView ? "visible" : "hidden"}
           className="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-12 items-center"
         >
-          {/* Right image (shows first on mobile) */}
-          <motion.div variants={fadeUp} className="md:col-span-2 md:order-2">
-            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden group">
-              {heroImageUrl ? (
-                <>
-                  <Image
-                    src={heroImageUrl}
-                    alt="Fellowship Background"
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-navy-900/40 mix-blend-multiply" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent" />
-                </>
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-chapel-300 to-navy-500" />
-              )}
-              <div className="absolute inset-0 flex items-center justify-center p-8">
-                <Image
-                  src="/flogo.png"
-                  alt="Anglican Students Fellowship"
-                  width={200}
-                  height={200}
-                  className="object-contain drop-shadow-2xl z-10"
-                />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Left text */}
-          <motion.div variants={fadeUp} className="md:col-span-3 md:order-1 space-y-6">
+          {/* Left text (Shows first on mobile due to DOM order / order-1) */}
+          <motion.div variants={fadeUp} className="order-1 md:col-span-3 space-y-6">
             <Image
               src="/flogo.png"
               alt="ASF Logo"
@@ -104,6 +84,32 @@ export function FellowshipSection() {
             >
               Join the Fellowship <ArrowRight size={14} />
             </Link>
+          </motion.div>
+
+          {/* Right image (shows second on mobile) */}
+          <motion.div variants={fadeUp} className="order-2 md:col-span-2">
+            <div className="relative aspect-[4/5] rounded-2xl overflow-hidden group">
+              {images.length > 0 ? (
+                <>
+                  {images.map((img, idx) => (
+                    <Image
+                      key={img.publicId || idx}
+                      src={img.url}
+                      alt="Fellowship Background"
+                      fill
+                      className={cn(
+                        "object-cover transition-all duration-1000",
+                        idx === currentIndex ? "opacity-100 scale-100" : "opacity-0 scale-105"
+                      )}
+                    />
+                  ))}
+                  <div className="absolute inset-0 bg-navy-900/10 mix-blend-multiply" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-900/40 via-transparent to-transparent" />
+                </>
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-chapel-300 to-navy-500" />
+              )}
+            </div>
           </motion.div>
         </motion.div>
       </div>

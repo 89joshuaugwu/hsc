@@ -32,6 +32,8 @@ export interface ChapelInfo {
   serviceTimes: ServiceTime[];
   heroImageUrl: string;
   heroImagePublicId?: string;
+  heroImages?: { id: string; url: string; publicId: string; order: number }[];
+  fellowshipImages?: { id: string; url: string; publicId: string; order: number }[];
   aboutContent: string;
   missionStatement: string;
   visionStatement: string;
